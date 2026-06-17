@@ -1,0 +1,54 @@
+from minsearch import Index  # type: ignore
+
+from classes.module_1.faq import FAQ
+from classes.module_1.raw_faq import RawFaq
+
+
+class InMemoryFAQ(FAQ):
+    def __init__(self) -> None:
+        self._index = None
+
+    def open(self) -> Index:
+        if not isinstance(self._index, InMemoryFAQ):
+            self.build_index()
+
+        return self._index
+
+    def search(
+        self,
+        question: str,
+        filter_dict: dict[str, str] | None = None,
+        boost_dict: dict[str, float] | None = None,
+        num_results: int = 10
+    ) -> list[dict[str, str]]:
+
+        if self._index is None:
+            raise RuntimeError("FAQ closed. You must open it first.")
+
+        # Con boost_dict se puede indicar cuál campo tiene más peso en el ranking
+        results: list[dict[str, str]] = self._index.search(
+            question,
+            boost_dict=boost_dict,
+            filter_dict=filter_dict,
+            num_results=num_results
+        )
+
+        return results
+
+    def close(self) -> None:
+        self._index = None
+
+    def build_index(self) -> Index:
+        faq = RawFaq()
+        faq_items = faq.items
+
+        index = Index(
+            text_fields=['question', 'section', 'answer'],
+            keyword_fields=['course'],
+        )
+
+        index.fit(faq_items)
+
+        self._index = index
+
+        return index

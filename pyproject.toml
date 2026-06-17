@@ -1,0 +1,35 @@
+[project]
+name = "zoomcamp"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "minsearch>=0.1.0",
+    "openai>=2.41.0",
+    "python-dotenv>=1.2.2",
+    "requests>=2.34.2",
+    "sqlitesearch>=0.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "isort>=8.0.1",
+    "mypy>=2.1.0",
+    "pandas-stubs>=3.0.3.260530",
+    "ruff>=0.15.17",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+
+# Vertical Hanging Indent
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+use_parentheses = true
+force_grid_wrap = 0
+line_length = 100
