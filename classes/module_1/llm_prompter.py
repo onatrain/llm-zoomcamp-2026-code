@@ -13,9 +13,9 @@ class LLMPrompter():
             api_key=os.getenv("LLM_API_KEY")
         )
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, model="nemotron-3-ultra:cloud") -> str:
         response = self._client.responses.create(
-            model="nemotron-3-ultra:cloud",
+            model=model,
             input=prompt
         )
         return response.output_text
