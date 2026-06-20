@@ -41,7 +41,7 @@ Context:
     return prompt
 
 
-def rag(question):
+def rag(question: str) -> str:
     search_results = search(question)
     user_prompt = build_prompt(question, search_results)
     return llm(user_prompt)

@@ -1,4 +1,4 @@
-from minsearch import Index  # type: ignore
+from minsearch import Index
 
 from classes.module_1.faq import FAQ
 from classes.module_1.raw_faq import RawFaq

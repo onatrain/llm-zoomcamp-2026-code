@@ -11,7 +11,7 @@ client = openai.Client(
     api_key=os.getenv("LLM_API_KEY")
 )
 
-def llm(user_prompt: str, system_prompt: str | None = None):
+def llm(user_prompt: str, system_prompt: str | None = None) -> str:
     prompt_history: ResponseInputParam = []
     if system_prompt:
         prompt_history.append({"role": "system", "content": system_prompt})

@@ -1,7 +1,7 @@
 from L2_connect import client
 
 
-def llm(prompt):
+def llm(prompt: str) -> str:
     response = client.responses.create(
         model="nemotron-3-ultra:cloud",
         input=prompt

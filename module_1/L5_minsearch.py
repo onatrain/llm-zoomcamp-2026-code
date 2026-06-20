@@ -1,15 +1,16 @@
 from L4_read_faq import faq_items
-from minsearch import Index  # type: ignore
+from minsearch import Index
 
 
 def search(question: str, course: str = 'llm-zoomcamp') -> list[dict[str, str]]:
     # Con boost_dict se puede indicar cuál campo tiene más peso en el ranking
-    return index.search(
+    results: list[dict[str, str]] = index.search(
         question,
         boost_dict={'question': 2.0, 'section': 1.0, 'answer': 0.5},  # default boost = 1
         filter_dict={'course': course},
         num_results=5
     )
+    return results
 
 
 # minsearch emula a ElasticSearch para búsquedas aproximadas en pequeños datasets de texto

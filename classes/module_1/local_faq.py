@@ -1,7 +1,7 @@
 import weakref
 from typing import Any
 
-from sqlitesearch import TextSearchIndex  # type: ignore
+from sqlitesearch import TextSearchIndex
 
 from classes.module_1.faq import FAQ
 from classes.module_1.raw_faq import RawFaq

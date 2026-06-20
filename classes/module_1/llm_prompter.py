@@ -3,6 +3,9 @@ import os
 import dotenv
 import openai
 
+from classes.module_1.thread import Thread
+
+
 dotenv.load_dotenv()
 
 
@@ -13,9 +16,9 @@ class LLMPrompter():
             api_key=os.getenv("LLM_API_KEY")
         )
 
-    def generate(self, prompt: str, model="nemotron-3-ultra:cloud") -> str:
+    def generate(self, thread: Thread, model: str ="nemotron-3-ultra:cloud") -> str:
         response = self._client.responses.create(
             model=model,
-            input=prompt
+            input=thread.get_messages(),
         )
         return response.output_text
