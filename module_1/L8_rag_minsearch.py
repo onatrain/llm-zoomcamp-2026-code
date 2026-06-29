@@ -1,11 +1,10 @@
-from classes.module_1.faq_searcher_factory import FAQSearcherFactory
-from classes.module_1.llm_prompter import LLMPrompter
-from classes.module_1.prompt_builder import PromptBuilder
-from classes.module_1.rag_pipeline import RAGPipeline
-from classes.module_1.searcher_config import SearcherConfig
-from classes.module_1.llm_instructions import PipelineLLMInstruction
-from classes.module_1.thread import Thread
-
+from module_1.classes.faq_searcher_factory import FAQSearcherFactory
+from module_1.classes.llm_instructions import PipelineLLMInstruction
+from module_1.classes.llm_prompter import LLMPrompter
+from module_1.classes.prompt_builder import PromptBuilder
+from module_1.classes.rag_pipeline import RAGPipeline
+from module_1.classes.searcher_config import SearcherConfig
+from module_1.classes.thread import Thread
 
 search_config = SearcherConfig(
     index_type="in_memory",

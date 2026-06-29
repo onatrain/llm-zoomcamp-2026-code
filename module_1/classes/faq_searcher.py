@@ -1,4 +1,4 @@
-from classes.module_1.faq import FAQ
+from module_1.classes.faq import FAQ
 
 
 class FAQSearcher:

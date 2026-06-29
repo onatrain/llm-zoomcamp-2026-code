@@ -1,4 +1,4 @@
-from classes.module_1.thread import Thread
+from module_1.classes.thread import Thread
 from utils.build_prompt import build_prompt
 
 
@@ -10,7 +10,7 @@ class PromptBuilder():
         context = self._build_context(retrieval)
         user_prompt = build_prompt(question, context)
 
-        self._thread.add_message("user", user_prompt)
+        self._thread.add_user_message(user_prompt)
 
         return self._thread
 

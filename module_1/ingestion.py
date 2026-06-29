@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from classes.module_1.local_faq import LocalFAQ
+from module_1.classes.local_faq import LocalFAQ
 
 current_dir = Path(__file__).parent
 

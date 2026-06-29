@@ -1,10 +1,9 @@
 import json
-import dotenv
 import os
-
 from pathlib import Path
 from typing import cast
 
+import dotenv
 from openai import Client
 from openai.types.responses import (
     EasyInputMessageParam,
@@ -14,8 +13,7 @@ from openai.types.responses import (
 )
 from openai.types.responses.response_input_item_param import FunctionCallOutput
 
-from classes.module_1.local_faq import LocalFAQ
-
+from module_1.classes.local_faq import LocalFAQ
 
 current_dir = Path(__file__).parent
 index_path = str(current_dir / "data/faq.db")

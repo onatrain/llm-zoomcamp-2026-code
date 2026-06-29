@@ -3,8 +3,8 @@ from typing import Any
 
 from sqlitesearch import TextSearchIndex
 
-from classes.module_1.faq import FAQ
-from classes.module_1.raw_faq import RawFaq
+from module_1.classes.faq import FAQ
+from module_1.classes.raw_faq import RawFaq
 
 
 class LocalFAQ(FAQ):

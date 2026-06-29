@@ -1,6 +1,6 @@
-from classes.module_1.faq_searcher import FAQSearcher
-from classes.module_1.llm_prompter import LLMPrompter
-from classes.module_1.prompt_builder import PromptBuilder
+from module_1.classes.faq_searcher import FAQSearcher
+from module_1.classes.llm_prompter import LLMPrompter
+from module_1.classes.prompt_builder import PromptBuilder
 
 
 class RAGPipeline:
