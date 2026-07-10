@@ -12,7 +12,7 @@ from openai.types.responses import (
 )
 from openai.types.responses import ResponseOutputItem
 
-from module_1.classes.thread import Thread
+from classes.thread import Thread
 
 dotenv.load_dotenv()
 

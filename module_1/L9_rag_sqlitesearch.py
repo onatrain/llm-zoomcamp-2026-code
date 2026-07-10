@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from module_1.classes.faq_searcher_factory import FAQSearcherFactory
-from module_1.classes.llm_instructions import PipelineLLMInstruction
-from module_1.classes.llm_prompter import LLMPrompter
-from module_1.classes.prompt_builder import PromptBuilder
-from module_1.classes.rag_pipeline import RAGPipeline
-from module_1.classes.searcher_config import SearcherConfig
-from module_1.classes.thread import Thread
+from classes.faq_searcher_factory import FAQSearcherFactory
+from classes.llm_instructions import PipelineLLMInstruction
+from classes.llm_prompter import LLMPrompter
+from classes.prompt_builder import PromptBuilder
+from classes.rag_pipeline import RAGPipeline
+from classes.searcher_config import SearcherConfig
+from classes.thread import Thread
 
 current_dir = Path(__file__).parent
 

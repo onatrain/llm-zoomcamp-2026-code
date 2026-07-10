@@ -1,18 +1,16 @@
 from minsearch import Index
 
-from module_1.classes.faq import FAQ
-from module_1.classes.raw_faq import RawFaq
+from classes.faq import FAQ
+from classes.raw_faq import RawFaq
 
 
 class InMemoryFAQ(FAQ):
     def __init__(self) -> None:
         self._index = None
 
-    def open(self) -> Index:
+    def open(self) -> None:
         if not isinstance(self._index, InMemoryFAQ):
             self.build_index()
-
-        return self._index
 
     def search(
         self,
@@ -38,7 +36,7 @@ class InMemoryFAQ(FAQ):
     def close(self) -> None:
         self._index = None
 
-    def build_index(self) -> Index:
+    def build_index(self) -> None:
         faq = RawFaq()
         faq_items = faq.items
 
@@ -51,4 +49,9 @@ class InMemoryFAQ(FAQ):
 
         self._index = index
 
-        return index
+    @property
+    def count(self) -> int:
+        if self._index is None:
+            raise RuntimeError("FAQ closed. You must open it first.")
+
+        return self._index.count()

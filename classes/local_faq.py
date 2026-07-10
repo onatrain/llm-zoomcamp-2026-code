@@ -3,8 +3,8 @@ from typing import Any
 
 from sqlitesearch import TextSearchIndex
 
-from module_1.classes.faq import FAQ
-from module_1.classes.raw_faq import RawFaq
+from classes.faq import FAQ
+from classes.raw_faq import RawFaq
 
 
 class LocalFAQ(FAQ):
@@ -13,7 +13,7 @@ class LocalFAQ(FAQ):
         self._index: TextSearchIndex | None = None
         self._finalizer: weakref.finalize[Any, Any] | None = None
 
-    def open(self) -> TextSearchIndex:
+    def open(self) -> None:
         if self._index is not None:
             self.close()
 
@@ -26,8 +26,6 @@ class LocalFAQ(FAQ):
         self._finalizer = weakref.finalize(self, index.close)
 
         self._index = index
-
-        return index
 
     def search(
         self,
@@ -59,11 +57,18 @@ class LocalFAQ(FAQ):
             self._finalizer.detach()
             self._finalizer = None
 
-    def build_index(self) -> TextSearchIndex:
+    def build_index(self) -> None:
         raw_faq = RawFaq()
         faq_items = raw_faq.items
 
-        index = self.open()
-        index.fit(faq_items)
+        self.open()
+        if self._index is not None:
+            self._index.fit(faq_items)
 
-        return index
+    @property
+    def count(self) -> int:
+        if self._index is None:
+            raise RuntimeError("FAQ closed. You must open it first.")
+
+        item_count: int = self._index.count()
+        return item_count

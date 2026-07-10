@@ -4,7 +4,7 @@ from typing import Any
 
 class FAQ(ABC):
     @abstractmethod
-    def open(self) -> Any:
+    def open(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -16,5 +16,9 @@ class FAQ(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def build_index(self) -> Any:
+    def build_index(self) -> None:
+        raise NotImplementedError
+
+    @property
+    def count(self) -> int:
         raise NotImplementedError

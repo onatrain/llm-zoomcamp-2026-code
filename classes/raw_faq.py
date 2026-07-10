@@ -4,7 +4,7 @@ FAQ_BASE_URL = "https://datatalks.club/faq"
 MAIN_FAQ_URL = "/json/courses.json"
 
 
-class RawFaq():
+class RawFaq:
     @property
     def items(self) -> list[dict[str, str]]:
         _faq_items = self._read_items()

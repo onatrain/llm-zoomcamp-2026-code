@@ -4,7 +4,7 @@ from typing import Any, Literal
 from openai.types.responses import EasyInputMessageParam, ResponseInputItemParam, ResponseFunctionToolCallParam
 from openai.types.responses.response_input_item_param import FunctionCallOutput
 
-from module_1.classes.llm_instructions import LLMInstruction
+from classes.llm_instructions import LLMInstruction
 
 role_type = Literal["user", "assistant"]
 

@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from module_1.classes.agent import Agent
-from module_1.classes.llm_instructions import SearchAgentLLMInstruction
-from module_1.classes.llm_prompter import LLMPrompter
-from module_1.classes.local_faq import LocalFAQ
-from module_1.classes.thread import Thread
-from module_1.classes.toolset import Toolset
+from classes.agent import Agent
+from classes.llm_instructions import SearchAgentLLMInstruction
+from classes.llm_prompter import LLMPrompter
+from classes.local_faq import LocalFAQ
+from classes.thread import Thread
+from classes.toolset import Toolset
 
 current_dir = Path(__file__).parent
 index_path = str(current_dir / "data/faq.db")

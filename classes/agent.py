@@ -1,11 +1,11 @@
-from module_1.classes.llm_prompter import (
+from classes.llm_prompter import (
     AgentResponse,
     FunctionCallResponse,
     LLMPrompter,
     MessageResponse,
 )
-from module_1.classes.thread import Thread
-from module_1.classes.toolset import Toolset
+from classes.thread import Thread
+from classes.toolset import Toolset
 
 
 class Agent():

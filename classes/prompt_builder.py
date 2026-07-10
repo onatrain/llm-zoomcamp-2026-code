@@ -1,4 +1,4 @@
-from module_1.classes.thread import Thread
+from classes.thread import Thread
 from utils.build_prompt import build_prompt
 
 

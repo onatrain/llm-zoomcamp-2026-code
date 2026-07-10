@@ -13,7 +13,7 @@ from openai.types.responses import (
 )
 from openai.types.responses.response_input_item_param import FunctionCallOutput
 
-from module_1.classes.local_faq import LocalFAQ
+from classes.local_faq import LocalFAQ
 
 current_dir = Path(__file__).parent
 index_path = str(current_dir / "data/faq.db")

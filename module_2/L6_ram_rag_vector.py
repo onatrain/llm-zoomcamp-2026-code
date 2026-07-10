@@ -8,10 +8,13 @@ from classes.thread import Thread
 
 search_config = SearcherConfig(
     index_type="in_memory",
+    vector_engine="sentence",
 )
 
 searcher_factory = FAQSearcherFactory()
 searcher = searcher_factory.create(search_config)
+
+print(searcher._index.count)
 
 thread = Thread(PipelineLLMInstruction())
 prompt_builder = PromptBuilder(thread)
