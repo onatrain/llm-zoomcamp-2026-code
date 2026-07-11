@@ -27,7 +27,6 @@ class InMemoryVectorFAQ(FAQ):
 
         query_vector = self._model.encode_text(question)
 
-        # Con boost_dict se puede indicar cuál campo tiene más peso en el ranking
         results: list[dict[str, str]] = self._index.search(
             query_vector,
             filter_dict=filter_dict,

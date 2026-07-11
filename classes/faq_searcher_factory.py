@@ -20,14 +20,17 @@ class FAQSearcherFactory:
                     case _:
                         raise ValueError(f"Unknown vector engine: {config.vector_engine}")
             case "local":
+                path = config.local_index_path
+                if path is None or not path.strip():
+                    raise ValueError("Local DB path must be provided")
                 match config.vector_engine:
+                    case "sentence":
+                        from classes.local_vector_faq import LocalVectorFAQ
+                        from classes.sentence_embedder import SentenceEmbedder
+                        index = LocalVectorFAQ(SentenceEmbedder(), db_path=path)
                     case None:
                         from classes.local_faq import LocalFAQ
-                        path = config.local_index_path
-                        if path is not None and path.strip():
-                            index = LocalFAQ(path)
-                        else:
-                            raise ValueError("Local DB path must be provided")
+                        index = LocalFAQ(db_path=path)
                     case _:
                         raise ValueError(f"Unknown vector engine: {config.vector_engine}")
             case _:

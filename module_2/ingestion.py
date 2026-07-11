@@ -1,11 +1,12 @@
 from pathlib import Path
 
-from classes.local_faq import LocalFAQ
+from classes.local_vector_faq import LocalVectorFAQ
+from classes.sentence_embedder import SentenceEmbedder
 
 current_dir = Path(__file__).parent
 
-local_faq = LocalFAQ(str(current_dir / "data/faq.db"))
+local_vector_faq = LocalVectorFAQ(SentenceEmbedder(), str(current_dir / "data/vector_faq.db"))
 
-local_faq.build_index()
+local_vector_faq.build_index()
 
-print("El indice creado contiene", local_faq.count, "documentos.")
+print("El indice creado contiene", local_vector_faq.count, "documentos.")
