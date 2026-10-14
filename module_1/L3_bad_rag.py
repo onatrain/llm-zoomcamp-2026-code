@@ -2,6 +2,14 @@ from utils.llm import llm
 
 
 def search(question: str) -> str:
+    """Look up an exact question in the hardcoded context map.
+
+    Args:
+        question: The question to look up.
+
+    Returns:
+        The matching context answer, or an empty string if not found.
+    """
     context = {
         "I just discovered the course. Can I still join?": (
             "Yes, but if you want to receive a certificate, you need to submit your project "
@@ -24,6 +32,15 @@ def search(question: str) -> str:
 
 
 def build_prompt(question: str, search_results: str) -> str:
+    """Build the RAG prompt from a question and search results.
+
+    Args:
+        question: The user's question.
+        search_results: The retrieved context.
+
+    Returns:
+        The formatted prompt string.
+    """
     prompt = f"""
 Your task is to answer questions from the course participants
 based on the provided context.
@@ -42,6 +59,14 @@ Context:
 
 
 def rag(question: str) -> str:
+    """Run the RAG pipeline for a single question.
+
+    Args:
+        question: The user's question.
+
+    Returns:
+        The LLM-generated answer.
+    """
     search_results = search(question)
     user_prompt = build_prompt(question, search_results)
     return llm(user_prompt)

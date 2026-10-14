@@ -1,0 +1,11 @@
+.idea/
+.venv/
+control/
+data/
+pgvector_data/
+
+__pycache__/
+*.pyc
+
+.env
+.env.docker

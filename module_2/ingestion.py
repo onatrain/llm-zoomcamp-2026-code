@@ -9,4 +9,4 @@ local_vector_faq = LocalVectorFAQ(SentenceEmbedder(), str(current_dir / "data/ve
 
 local_vector_faq.build_index()
 
-print("El indice creado contiene", local_vector_faq.count, "documentos.")
+print("The created index contains", local_vector_faq.count, "documents.")

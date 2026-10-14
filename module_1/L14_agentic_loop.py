@@ -15,6 +15,14 @@ faq.open()
 
 
 def search(query: str) -> list[dict[str, str]]:
+    """Search the FAQ database with boosted and filtered fields.
+
+    Args:
+        query: The search query text.
+
+    Returns:
+        A list of matching FAQ entries as dictionaries.
+    """
     boost_dict = {"question": 3.0, "section": 0.5}
     filter_dict = {"course": "llm-zoomcamp"}
 

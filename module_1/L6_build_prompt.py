@@ -4,6 +4,14 @@ from utils.build_prompt import build_prompt
 
 
 def build_context(documents: list[dict[str, str]]) -> str:
+    """Format search results into a context block for the prompt.
+
+    Args:
+        documents: The search result documents.
+
+    Returns:
+        A formatted context string.
+    """
     lines = []
 
     for doc in documents:

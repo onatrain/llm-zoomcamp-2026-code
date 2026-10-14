@@ -1,0 +1,31 @@
+services:
+  db:
+    image: pgvector/pgvector:0.8.5-pg18-trixie
+    container_name: pgvector
+    restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - "./pgvector_data:/var/lib/postgresql"
+    env_file:
+      - ./.env.docker
+    healthcheck:
+      disable: true
+      test: pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
+      # Define la frecuencia con la que Docker repite el healthcheck.
+      # Para el tiempo inicial de arranque existe start_period.
+      interval: 30s
+      # Tiempo que se le da al comando para correr antes de considerar que ha fallado
+      timeout: 10s
+      retries: 5
+      # Da al db tiempo en el que comandos fallidos no cuentan. Esto es para dar un margen de tiempo de arranque.
+      start_period: 30s
+    networks:
+      postgres_net:
+    deploy:
+      resources:
+        limits:
+          memory: 1G # Container uses 2048M in total (swap=1024M)
+
+networks:
+  postgres_net:

@@ -3,19 +3,20 @@ from L3_embeddings_dataset import texts, model, np, X
 # Query embedding
 query = "Can I still join the course after the start date?"
 v_query = model.encode(query)
+print("Type of a embedded query:", type(v_query))  # <class 'numpy.ndarray'>
 
 # Vector search
-scores = X.dot(v_query)  # scores es un array cuyos elementos son los scores (floats)
+scores = X.dot(v_query)  # scores is an array whose elements are the scores (floats)
 
-# Obtiene el score más alto y su documento
+# Get the highest score and its document
 idx = np.argmax(scores)
 print("The best score found is in pos", idx, "and its value is", scores[idx])
 
 print()
 
-# Obtiene los 5 scores más altos y sus documentos
+# Get the top 5 scores and their documents
 top5 = np.argsort(-scores)[:5]
-print("Los 5 mejores scores son:")
+print("The 5 best scores are:")
 for idx in top5:
     print(scores[idx])
     print(texts[idx])

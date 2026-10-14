@@ -25,9 +25,17 @@ dotenv.load_dotenv()
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Definición del tool
+# Tool definition
 # ═══════════════════════════════════════════════════════════════════
 def search(query: str) -> list[dict[str, str]]:
+    """Search the FAQ database with boosted and filtered fields.
+
+    Args:
+        query: The search query text.
+
+    Returns:
+        A list of matching FAQ entries as dictionaries.
+    """
     boost_dict = {"question": 3.0, "section": 0.5}
     filter_dict = {"course": "llm-zoomcamp"}
 
@@ -35,7 +43,7 @@ def search(query: str) -> list[dict[str, str]]:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Estructura de definición del tool
+# Tool definition structure
 # ═══════════════════════════════════════════════════════════════════
 search_tool: FunctionToolParam = {
     "type": "function",
@@ -63,7 +71,7 @@ client = Client(
 model = "nemotron-3-ultra:cloud"
 
 # ═══════════════════════════════════════════════════════════════════
-# Lista de mensajes para el modelo
+# List of messages for the model
 # ═══════════════════════════════════════════════════════════════════
 messages: list[ResponseInputItemParam] = [
     EasyInputMessageParam(role="user", content="I just discovered the course. Can I join it?")
@@ -76,8 +84,8 @@ response = client.responses.create(
 )
 
 # ═══════════════════════════════════════════════════════════════════
-# Obtener correctamente la tool call. El Responses API no fija un orden
-# en los objetos con los que construye la respuesta.
+# Correctly get the tool call. The Responses API does not fix an order
+# in the objects it uses to build the response.
 # ═══════════════════════════════════════════════════════════════════
 tool_call: ResponseFunctionToolCall
 
@@ -87,23 +95,23 @@ for output in response.output:
         break
 
 # ═══════════════════════════════════════════════════════════════════
-# Obtiene los argumentos con los que se debe llamar el tool
+# Get the arguments with which the tool must be called
 # ═══════════════════════════════════════════════════════════════════
 args = json.loads(tool_call.arguments)
 
 # ═══════════════════════════════════════════════════════════════════
-# Se llama al tool y se serializa el resultado en un json
+# Call the tool and serialize the result into a JSON
 # ═══════════════════════════════════════════════════════════════════
 results = search(**args)
 result_json = json.dumps(results, indent=2)
 
 # ═══════════════════════════════════════════════════════════════════════
-# Se guarda el tool call que hizo el modelo
+# Store the tool call made by the model
 # ═══════════════════════════════════════════════════════════════════════
 messages.append(cast(ResponseInputItemParam, tool_call))
 
 # ═══════════════════════════════════════════════════════════════════
-# Se guarda la respuesta del tool call
+# Store the tool call response
 # ═══════════════════════════════════════════════════════════════════
 function_output: FunctionCallOutput = {
     "type": "function_call_output",
@@ -113,7 +121,7 @@ function_output: FunctionCallOutput = {
 messages.append(function_output)
 
 # ═══════════════════════════════════════════════════════════════════
-# Segunda llamada suministrando el tool call response
+# Second call supplying the tool call response
 # ═══════════════════════════════════════════════════════════════════
 response = client.responses.create(
     model=model,
@@ -124,7 +132,7 @@ response = client.responses.create(
 print(response.output_text)
 
 # ═══════════════════════════════════════════════════════════════════
-# Manejo correcto de response.usage
+# Proper handling of response.usage
 # ═══════════════════════════════════════════════════════════════════
 if response.usage is not None:
     print(f"Input tokens: {response.usage.input_tokens}")

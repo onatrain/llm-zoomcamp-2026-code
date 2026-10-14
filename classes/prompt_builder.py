@@ -24,4 +24,3 @@ class PromptBuilder():
             lines.append("")
 
         return "\n".join(lines).strip()
-

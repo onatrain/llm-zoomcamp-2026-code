@@ -12,6 +12,15 @@ client = openai.Client(
 )
 
 def llm(user_prompt: str, system_prompt: str | None = None) -> str:
+    """Send a prompt to the LLM and return its text response.
+
+    Args:
+        user_prompt: The user message to send.
+        system_prompt: An optional system instruction prepended to the history.
+
+    Returns:
+        The model's output text.
+    """
     prompt_history: ResponseInputParam = []
     if system_prompt:
         prompt_history.append({"role": "system", "content": system_prompt})

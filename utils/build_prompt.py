@@ -17,4 +17,13 @@ Context:
 
 
 def build_prompt(question: str, context: str) -> str:
+    """Format the question and context into the prompt template.
+
+    Args:
+        question: The user's question.
+        context: The retrieved context to answer from.
+
+    Returns:
+        The formatted prompt string.
+    """
     return PROMPT_TEMPLATE.format(question=question, context=context)
