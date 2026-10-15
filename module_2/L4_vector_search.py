@@ -1,4 +1,4 @@
-from L3_embeddings_dataset import texts, model, np, X
+from L3_embeddings_dataset import X, model, np, texts
 
 # Query embedding
 query = "Can I still join the course after the start date?"

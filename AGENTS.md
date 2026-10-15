@@ -6,7 +6,12 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 ## Layout
 
-- `classes/` — reusable library (FAQ searchers, embedders, RAG pipeline, Agent/Toolset stack, pgvector repo). Entrypoint for config composition: `classes/faq_searcher_factory.py`.
+- `classes/` — reusable library (FAQ searchers, embedders, RAG pipeline, Agent/Toolset stack, vector stores). Entrypoint for config composition: `classes/faq_searcher_factory.py`.
+  - `faq.py` — `FAQ` contract (open/search/close/build_index/count); other indexes are `FAQ` adapters. `build_index()` always *rebuilds* the FAQ content fetched from `RawFaq`; for pgvector that means the adapter resets the store itself.
+  - `vector_store.py` — `VectorStore` ABC + `SearchResult` for vector-database stores.
+  - `managed_resource.py` — `ManagedResource` mixin: open/close lifecycle, finalizers, context manager.
+  - `pgvector_store.py` — `PgvectorStore`, the psycopg/pgvector `VectorStore` implementation.
+  - `pgvector_faq.py` — `PgvectorFAQ`, `FAQ` adapter over any `VectorStore` + `Embedder`.
 - `module_1/` — keyword-search RAG scripts (minsearch, sqlitesearch, function calling, agentic loop).
 - `module_2/` — vector-search scripts (sentence-transformers, numpy dot-product search, pgvector).
 - `utils/` — shared helpers (`llm`, `build_prompt`), importable from the repo root.
@@ -23,8 +28,9 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 ## Environment
 
 - Secrets file `.env` exists at project root directory but it is not accesible; it contains `LLM_API_KEY`, `LLM_BASE_URL`, `DATABASE_URL` value definitions.
-- sentence-transformers runs offline (`TRANSFORMERS_OFFLINE=1`, `HF_HUB_OFFLINE=1`) with models cache dir `./models`; do not remove those env vars in scripts.
+- sentence-transformers must run offline: `classes/sentence_embedder.py` sets `TRANSFORMERS_OFFLINE=1` / `HF_HUB_OFFLINE=1` at import time (huggingface_hub reads those flags only once, when imported) and resolves the cached model directory instead of the model id. `local_model_path()` searches `SENTENCE_TRANSFORMERS_HOME` and the HF Hub cache (`HF_HUB_CACHE`/`HF_HOME`, default `~/.cache/huggingface/hub`). Loading a local directory skips Hub resolution entirely, so no weights download is ever attempted. Use `load_transformer()` instead of building `SentenceTransformer` in scripts; do not remove the offline env vars.
 - pgvector scripts need the docker service: `docker compose up -d db` (env from `.env.docker`, port 5432). Data persists in `pgvector_data/`.
+- `module_2/pgingestion.py` is the canonical pgvector ingestion: it only builds a `PgvectorFAQ` and calls `build_index()`, which opens the store, resets it and inserts the embedded FAQ (no manual `connect()`/`db_reset()`). It is safe to run repeatedly; a fresh database needs no prior setup.
 
 ## Checks
 
@@ -38,3 +44,11 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 - All comments, user messages, and docstrings in English; docstrings use Google style (Args/Returns), no usage examples.
 - Line length 88 (ruff/isort/mypy config in `pyproject.toml`).
 - torch is pinned to the CPU index in `pyproject.toml` (`pytorch-cpu`) — keep that source.
+
+## Pending
+
+- Redesign `FAQSearcherFactory` to remove the nested `match` blocks and the hardwired concrete classes (registry/provider based), injecting the embedder instead of building a new one per call. Detailed plan: `docs/searcher_factory_redesign.md`.
+- The same redesign must wire pgvector into the search stack: support `index_type="repository"` (with `vector_engine="sentence"`) mapping to `PgvectorFAQ(PgvectorStore(...), embedder)`.
+- Decompose the other `FAQ` implementations the same way as pgvector (`FAQ` adapter + technology-specific store, reusing the `ManagedResource` mixin): `InMemoryFAQ` and `LocalFAQ`/`LocalVectorFAQ`.
+- Derive `DEFAULT_EMBEDDING_DIM` in `classes/pgvector_store.py` from a calculation (e.g. embedding a probe text with the same embedder) instead of hardcoding 384.
+

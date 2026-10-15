@@ -33,6 +33,22 @@ class FAQSearcherFactory:
                         index = LocalFAQ(db_path=path)
                     case _:
                         raise ValueError(f"Unknown vector engine: {config.vector_engine}")
+            case "repository":
+                dsn = config.database_url
+                if dsn is None or not dsn.strip():
+                    raise ValueError("Database URL must be provided")
+                match config.vector_engine:
+                    case "sentence":
+                        from classes.pgvector_faq import PgvectorFAQ
+                        from classes.pgvector_store import PgvectorStore
+                        from classes.sentence_embedder import SentenceEmbedder
+                        embedder = SentenceEmbedder()
+                        index = PgvectorFAQ(
+                            PgvectorStore(dsn, dimension=embedder.embedding_dimension),
+                            embedder,
+                        )
+                    case _:
+                        raise ValueError(f"Unknown vector engine: {config.vector_engine}")
             case _:
                 raise ValueError(f"Unknown index type: {config.index_type}")
 

@@ -14,7 +14,7 @@ def llm(prompt: str) -> str:
         model="nemotron-3-ultra:cloud",
         input=prompt
     )
-    return response.output_text
+    return str(response.output_text)
 
 
 question = "I just discovered the course. Can I join now?"

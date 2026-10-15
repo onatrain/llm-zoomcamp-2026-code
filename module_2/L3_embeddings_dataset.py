@@ -1,18 +1,11 @@
-import os
-
 import numpy as np
 from tqdm.auto import tqdm
 
 from classes.raw_faq import RawFaq
+from classes.sentence_embedder import load_transformer
 
-# Instantiate SentenceTransformer and load the model to create embeddings
-os.environ['SENTENCE_TRANSFORMERS_HOME'] = './models'
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_HUB_OFFLINE"] = "1"
-
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer("all-MiniLM-L6-v2", token=False)
+# Load the model once to create the embeddings of the dataset
+model = load_transformer()
 
 # Load the FAQ documents as question + answer
 raw_faq = RawFaq()

@@ -8,9 +8,9 @@ from openai import Client
 from openai.types.responses import (
     FunctionToolParam,
     ResponseFunctionToolCall,
+    ResponseOutputItem,
     ResponseOutputMessage,
 )
-from openai.types.responses import ResponseOutputItem
 
 from classes.thread import Thread
 

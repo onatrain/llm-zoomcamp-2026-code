@@ -1,8 +1,8 @@
 from minsearch import VectorSearch
 
+from classes.embedder import Embedder
 from classes.faq import FAQ
 from classes.raw_faq import RawFaq
-from classes.embedder import Embedder
 
 
 class InMemoryVectorFAQ(FAQ):

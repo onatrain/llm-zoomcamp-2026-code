@@ -50,24 +50,42 @@ agentic tool-calling stack. It is consumed by the scripts in `module_1/` and
   `LocalVectorFAQ` receive an `Embedder`. Collaborators are constructor
   arguments, keeping the orchestration code backend-agnostic and testable.
 
-### Repository Pattern
+### Adapter Pattern
 
-- `PgvectorRepository` (`classes/pgvector_repository.py`) hides all SQL,
-  connection management, and DDL (`CREATE EXTENSION`, table creation, HNSW
-  index) behind `connect()`, `db_setup()`, `bulk_insert()`, and `close()`.
+- `PgvectorFAQ` (`classes/pgvector_faq.py`) adapts a `VectorStore` plus an
+  `Embedder` to the `FAQ` contract (`open`/`search`/`close`/`build_index`/
+  `count`). It is the only piece that knows the FAQ vocabulary: it encodes the
+  question with the embedder, delegates the database work to the store, maps
+  `SearchResult` objects back to `list[dict[str, str]]`, and owns the rebuild
+  semantics of `build_index()` (open, `db_reset()`, insert). Every
+  technology-specific import (psycopg, numpy) lives below it, in the store.
+- This keeps one `FAQ` implementation per store family while allowing N vector
+  store concretions, versus one `FAQ` class per (storage × engine) combination.
+
+### Repository Pattern → replaced by VectorStore port + FAQ adapter
+
+- The previous `PgvectorRepository` (`classes/pgvector_repository.py`) mixed
+  connection management, DDL, inserts and serialization behind an
+  infrastructure vocabulary (`connect`, `db_setup`, `bulk_insert`), which is why
+  it did not behave like a repository.
+- That class was removed and replaced by two pieces: `PgvectorStore`
+  (`classes/pgvector_store.py`), a `VectorStore` concretions owning only
+  database concerns, and `PgvectorFAQ`, the adapter described above.
 
 ### Null-object / lifecycle state guard
 
-- Every FAQ and the repository track an "opened" state with a nullable
-  resource (`self._index = None` when closed) and raise
-  `RuntimeError("FAQ closed. You must open it first.")` on misuse.
+- `ManagedResource` (`classes/managed_resource.py`) centralizes the lifecycle:
+  it holds a nullable resource, raises `RuntimeError(self.closed_message)` on
+  use-while-closed, detaches finalizers on reconnect (the old
+  `PgvectorRepository.connect` overwrote the finalizer and leaked the previous
+  connection), and provides a context manager.
+- `PgvectorStore` uses it; `LocalFAQ`/`LocalVectorFAQ` implement the same
+  pattern inline today and are candidates to reuse the mixin.
 
 ### Finalizer (resource-safety) pattern
 
-- `LocalFAQ`, `LocalVectorFAQ`, and `PgvectorRepository` register a
-  `weakref.finalize` callback so SQLite/Postgres connections are closed even if
-  `close()` is never called explicitly; the finalizer is detached in `close()`
-  to avoid a double close during GC.
+- `PgvectorStore` registers a `weakref.finalize` callback so a Postgres
+  connection is closed even if `close()` is never called explicitly.
 
 ### Protocol-based Instruction
 
@@ -81,8 +99,9 @@ agentic tool-calling stack. It is consumed by the scripts in `module_1/` and
 ### Configuration-driven composition
 
 `SearcherConfig` (`classes/searcher_config.py`) uses a `Literal`-typed
-dataclass (`index_type: "in_memory" | "local"`, optional
-`vector_engine: "sentence" | None`, optional `local_index_path`). The factory
+dataclass (`index_type: "in_memory" | "local" | "repository"`, optional
+`vector_engine: "sentence" | None`, optional `local_index_path`, optional
+`database_url`). The factory
 validates the combination with `match` statements and raises `ValueError` for
 unknown combinations — one place to evolve when a new backend is added.
 
@@ -137,12 +156,50 @@ thread, not the pipeline, is the single source of conversation history.
 `sqlitesearch.TextSearchIndex`/`VectorSearchIndex` (vector index in `ivf`
 mode), making local RAG runs reproducible without a server.
 
+### Data Transfer Object for search hits
+
+- `SearchResult` (`classes/vector_store.py`) is a frozen dataclass carrying
+  `document`, `distance` and `rank`. It keeps the cosine distance available at
+  the store boundary without leaking pgvector row objects upward, and lets the
+  adapter decide what to expose.
+
+### build_index rebuilds the FAQ content
+
+- Every `FAQ` implementation treats `build_index()` as a *rebuild* of the FAQ
+  content fetched from `RawFaq`, not as an append. `InMemoryFAQ` and
+  `InMemoryVectorFAQ` construct a fresh index object; `LocalFAQ` and
+  `LocalVectorFAQ` call `fit()` again over the same database path.
+- `PgvectorFAQ.build_index()` follows the same contract: it opens the store if
+  needed, calls `store.db_reset()` (drop and recreate the `documents` table) and
+  then inserts the freshly embedded FAQ items. Callers never have to connect or
+  reset by hand, so `module_2/pgingestion.py` is just
+  `PgvectorFAQ(PgvectorStore(), SentenceEmbedder()).build_index()`.
+- Consequence: running the ingestion twice leaves the same document count
+  (1427), and a brand new database (no `documents` table) is built from scratch
+  with no prior setup step.
+
 ### pgvector index choices
 
-`PgvectorRepository.db_setup` drops and recreates the `documents` table and
-creates an HNSW index with `vector_cosine_ops`, matching the unit-normalized
-embeddings produced by MiniLM. Vectors are inserted as `[..]::vector` text
-literals to keep the dependency set minimal (no pgvector adapter).
+- `PgvectorStore.db_reset` drops and recreates the `documents` table and creates
+  an HNSW index with `vector_cosine_ops`, matching the unit-normalized
+  embeddings produced by MiniLM. Vectors are inserted as `[..]::vector` text
+  literals to keep the dependency set minimal (no pgvector adapter).
+- The table dimension comes from `DEFAULT_EMBEDDING_DIM` (384) or the
+  `dimension` constructor argument, so the store is not silently coupled to a
+  single embedding model.
+- `search` uses the pgvector cosine operator `<=>` and selects the distance
+  back, ordering by it in SQL.
+- Statements run through a single `_execute` helper that translates a missing
+  `documents` table into `RuntimeError("The documents table does not exist yet.
+  Build the index first.")`, so a search before `build_index()` fails with the
+  library's vocabulary instead of a raw `psycopg` error.
+
+### Open-state query instead of probing
+
+- `VectorStore` declares an `is_open` property (implemented by the
+  `ManagedResource` mixin). `PgvectorFAQ.open()` asks `store.is_open` instead of
+  probing the store with `count()`, which also makes opening a store whose table
+  does not exist yet perfectly valid.
 
 ### Data source access behind a lazy property
 
@@ -150,9 +207,8 @@ literals to keep the dependency set minimal (no pgvector adapter).
 access through the property, so constructing the object is cheap and the
 network fetch is deferred until an index build actually needs the data.
 
-### Repository configuration via environment
+### Store configuration via environment
 
-`PgvectorRepository` reads `DATABASE_URL` (and all LLM clients read
-`LLM_API_KEY`/`LLM_BASE_URL`) from `.env` through `python-dotenv`; connection
-details never live in code. `PgvectorRepository.__repr__` exposes
-user@host:port/dbname without credentials.
+- Clients resolve the `DATABASE_URL` environment variable (with `python-dotenv`)
+  and pass the DSN explicitly to `PgvectorStore`; the store requires it as a
+  constructor argument and never reads the environment itself.

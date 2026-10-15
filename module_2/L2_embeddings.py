@@ -1,14 +1,10 @@
-import os
+from pprint import pprint
 
-os.environ['SENTENCE_TRANSFORMERS_HOME'] = './models'
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_HUB_OFFLINE"] = "1"
+from classes.sentence_embedder import load_transformer
 
-from sentence_transformers import SentenceTransformer
+model = load_transformer()
 
-model = SentenceTransformer("all-MiniLM-L6-v2", token=False)
-
-d  = "You don't need to register. You're accepted. You can also just start learning and submitting homework without registering."
+d = "You don't need to register. You're accepted. You can also just start learning and submitting homework without registering."
 dv = model.encode(d)
 
 print("Document vector dimensions:", dv.shape)
@@ -28,6 +24,4 @@ print(v2.dot(dv))
 print(dv.dot(v2))
 print()
 
-from pprint import pprint
 pprint(dv)
-

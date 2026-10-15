@@ -1,7 +1,11 @@
 import json
 from typing import Any, Literal
 
-from openai.types.responses import EasyInputMessageParam, ResponseInputItemParam, ResponseFunctionToolCallParam
+from openai.types.responses import (
+    EasyInputMessageParam,
+    ResponseFunctionToolCallParam,
+    ResponseInputItemParam,
+)
 from openai.types.responses.response_input_item_param import FunctionCallOutput
 
 from classes.llm_instructions import LLMInstruction
