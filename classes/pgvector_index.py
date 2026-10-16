@@ -43,9 +43,7 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
 
     closed_message = "Database closed. You must connect() it first."
 
-    def __init__(
-        self, dsn: str, *, dimension: int
-    ) -> None:
+    def __init__(self, dsn: str, *, dimension: int) -> None:
         """Initialize the store.
 
         Args:
@@ -84,6 +82,9 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         Raises:
             psycopg.OperationalError: If the database is not reachable.
         """
+        if self.is_open:
+            self.close()
+
         connection = psycopg.connect(conninfo=self._dsn, row_factory=dict_row)
         self._register_resource(connection, connection.close)
 

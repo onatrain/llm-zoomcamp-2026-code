@@ -1,6 +1,7 @@
 .idea/
 .venv/
 control/
+!articles/
 data/
 pgvector_data/
 

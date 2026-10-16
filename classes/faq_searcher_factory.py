@@ -20,11 +20,10 @@ def _in_memory_lexical(config: SearcherConfig, embedder: object | None = None) -
 
 
 def _in_memory_semantic(config: SearcherConfig, embedder: object | None = None) -> FAQ:
+    from classes.embedder import Embedder
     from classes.in_memory_vector_index import InMemoryVectorIndex
     from classes.semantical_faq import SemanticalFAQ
     from classes.sentence_embedder import SentenceEmbedder
-
-    from classes.embedder import Embedder
 
     resolved_embedder: Embedder = (
         embedder if isinstance(embedder, Embedder) else SentenceEmbedder()
@@ -33,8 +32,8 @@ def _in_memory_semantic(config: SearcherConfig, embedder: object | None = None) 
 
 
 def _local_lexical(config: SearcherConfig, embedder: object | None = None) -> FAQ:
-    from classes.local_db_index import LocalDbIndex
     from classes.lexical_faq import LexicalFAQ
+    from classes.local_db_index import LocalDbIndex
 
     path = config.local_index_path
     if path is None or not path.strip():

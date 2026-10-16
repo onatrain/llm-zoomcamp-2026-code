@@ -4,8 +4,8 @@ from typing import Sequence
 
 from sqlitesearch import TextSearchIndex
 
-from classes.managed_resource import ManagedResource
 from classes.keyword_index import KeywordIndex
+from classes.managed_resource import ManagedResource
 
 
 class LocalDbIndex(ManagedResource[TextSearchIndex], KeywordIndex):

@@ -18,6 +18,7 @@ dev = [
     "isort>=8.0.1",
     "mypy>=2.1.0",
     "pandas-stubs>=3.0.3.260530",
+    "pytest>=9.1.1",
     "ruff>=0.15.17",
 ]
 
@@ -27,6 +28,7 @@ line-length = 88
 [tool.mypy]
 strict = true
 ignore_missing_imports = true
+exclude = ["control", "tests"]
 
 # Vertical Hanging Indent
 [tool.isort]
@@ -35,6 +37,10 @@ include_trailing_comma = true
 use_parentheses = true
 force_grid_wrap = 0
 line_length = 88
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests/unit", "tests/integration"]
 
 # Necesario para descargar e instalar pytorch cpu-only, dependencia de sentence-transformers
 [tool.uv.sources]

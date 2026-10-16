@@ -40,7 +40,7 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 - Lint/format: `uv run ruff check .` and `uv run ruff format .`
 - Import sorting: `uv run isort .`
 - Types: `uv run mypy .` (strict mode; `ignore_missing_imports = true`)
-- No test suite exists; verify by running the relevant script.
+- Tests: `uv run pytest`. `tests/unit` is offline and fast; `tests/integration` downloads the real FAQ corpus once per session, embeds it with the cached sentence-transformers model and exercises the non-in-memory adapters with real data. pgvector integration tests need `docker compose up -d db` and skip when `DATABASE_URL` is missing or PostgreSQL is unreachable.
 
 ## Conventions
 

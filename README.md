@@ -1,7 +1,7 @@
 ## LLM Zoomcamp 2026 Course Code
 
-This is my participation in the free course LLM Zoomcamp started on June 8th, 2026. I'll publish code exercises from
-the course here, made my way, because Python scripts are more friendly for me than Jupyter Notebooks.
+This is my participation in the free course LLM Zoomcamp started on June 2026. I publish code exercises from
+the course here, made my way, because Python scripts are more friendly than Jupyter Notebooks for me.
 
 In this repo you will find tests, prototypes and course code following the course contents published at
 [LLM Zoomcamp repo](https://github.com/DataTalksClub/llm-zoomcamp/tree/main)

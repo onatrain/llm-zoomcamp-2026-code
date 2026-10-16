@@ -69,6 +69,8 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         ]
 
     def size(self) -> int:
+        if not self.is_open or self._index is None:
+            raise RuntimeError(self.closed_message)
         return len(self._documents)
 
     def close(self) -> None:

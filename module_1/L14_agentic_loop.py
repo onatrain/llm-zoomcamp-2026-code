@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from classes.agent import Agent
+from classes.lexical_faq import LexicalFAQ
 from classes.llm_instructions import SearchAgentLLMInstruction
 from classes.llm_prompter import LLMPrompter
-from classes.lexical_faq import LexicalFAQ
 from classes.local_db_index import LocalDbIndex
 from classes.thread import Thread
 from classes.toolset import Toolset
