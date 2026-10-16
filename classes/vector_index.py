@@ -23,23 +23,17 @@ class SearchResult:
     rank: int
 
 
-class VectorStore(ABC):
+class VectorIndex(ABC):
     """Contract for vector database stores used to search embedded documents.
 
     Implementations own all the technology-specific details (connections, SQL
     dialects, index maintenance) and expose them through this vocabulary.
     """
 
-    closed_message = "Store closed. You must connect() it first."
-
-    @property
-    @abstractmethod
-    def dimension(self) -> int:
-        """Embedding dimension expected by this store."""
-        raise NotImplementedError
+    closed_message = "Index closed. You must connect() it first."
 
     @abstractmethod
-    def connect(self) -> None:
+    def open(self) -> None:
         """Open the connection to the store."""
         raise NotImplementedError
 
@@ -54,7 +48,7 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def db_reset(self) -> None:
+    def reset(self) -> None:
         """Drop and recreate the store schema.
 
         This operation is destructive: it deletes every stored document.
@@ -62,7 +56,7 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def insert(self, document: dict[str, str], vector: Vector) -> None:
+    def add(self, document: dict[str, str], vector: Vector) -> None:
         """Insert a single document with its embedding.
 
         Args:
@@ -72,7 +66,7 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def bulk_insert(
+    def add_all(
         self, documents: Sequence[dict[str, str]], vectors: Sequence[Vector]
     ) -> None:
         """Insert many documents with their embeddings.
@@ -100,7 +94,7 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def count(self) -> int:
+    def size(self) -> int:
         """Return the number of stored documents.
 
         Returns:

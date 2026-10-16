@@ -12,11 +12,10 @@ agentic tool-calling stack. It is consumed by the scripts in `module_1/` and
 - `Embedder` (`classes/embedder.py`) is an abstract base class with two
   interchangeable strategies for turning text into vectors: `embed_texts`
   (batch) and `encode_text` (single). `SentenceEmbedder` is the concrete
-  strategy; `InMemoryVectorFAQ` and `LocalVectorFAQ` depend on the abstraction,
+  strategy; `SemanticalFAQ` (backed by `InMemoryVectorIndex`/`LocalVectorDbIndex`) depends on the abstraction,
   not on any specific model.
-- The `FAQ` implementations (`InMemoryFAQ`, `LocalFAQ`, `InMemoryVectorFAQ`,
-  `LocalVectorFAQ`) are interchangeable strategies behind the `FAQ` abstract
-  interface, selected at runtime by `FAQSearcherFactory`.
+- The `FAQ` adapters (`LexicalFAQ`, `SemanticalFAQ`) backed by concrete
+  `KeywordIndex`/`VectorIndex` implementations are interchangeable strategies behind the `FAQ` port, selected at runtime by `FAQSearcherFactory`.
 
 ### Template Method / Uniform Interface
 
@@ -46,31 +45,30 @@ agentic tool-calling stack. It is consumed by the scripts in `module_1/` and
 ### Dependency Injection
 
 - `Agent` receives its `LLMPrompter` and `Thread`; `RAGPipeline` receives
-  `FAQSearcher`, `PromptBuilder`, and `LLMPrompter`; `InMemoryVectorFAQ` and
-  `LocalVectorFAQ` receive an `Embedder`. Collaborators are constructor
+  `FAQSearcher`, `PromptBuilder`, and `LLMPrompter`; `SemanticalFAQ` receives an `Embedder`. Collaborators are constructor
   arguments, keeping the orchestration code backend-agnostic and testable.
 
 ### Adapter Pattern
 
-- `PgvectorFAQ` (`classes/pgvector_faq.py`) adapts a `VectorStore` plus an
+- `SemanticalFAQ` (`classes/semantical_faq.py`) adapts a `VectorIndex` plus an
   `Embedder` to the `FAQ` contract (`open`/`search`/`close`/`build_index`/
   `count`). It is the only piece that knows the FAQ vocabulary: it encodes the
   question with the embedder, delegates the database work to the store, maps
   `SearchResult` objects back to `list[dict[str, str]]`, and owns the rebuild
-  semantics of `build_index()` (open, `db_reset()`, insert). Every
+  semantics of `build_index()` (open, `reset()`, insert). Every
   technology-specific import (psycopg, numpy) lives below it, in the store.
 - This keeps one `FAQ` implementation per store family while allowing N vector
   store concretions, versus one `FAQ` class per (storage × engine) combination.
 
-### Repository Pattern → replaced by VectorStore port + FAQ adapter
+### Repository Pattern → replaced by VectorIndex port + FAQ adapter
 
 - The previous `PgvectorRepository` (`classes/pgvector_repository.py`) mixed
   connection management, DDL, inserts and serialization behind an
-  infrastructure vocabulary (`connect`, `db_setup`, `bulk_insert`), which is why
+  infrastructure vocabulary (`connect`, `db_setup`, `add_all`), which is why
   it did not behave like a repository.
-- That class was removed and replaced by two pieces: `PgvectorStore`
-  (`classes/pgvector_store.py`), a `VectorStore` concretions owning only
-  database concerns, and `PgvectorFAQ`, the adapter described above.
+- That class was removed and replaced by two pieces: `PgvectorIndex`
+  (`classes/pgvector_index.py`), a `VectorIndex` concretions owning only
+  database concerns, and `SemanticalFAQ`, the adapter described above.
 
 ### Null-object / lifecycle state guard
 
@@ -79,12 +77,12 @@ agentic tool-calling stack. It is consumed by the scripts in `module_1/` and
   use-while-closed, detaches finalizers on reconnect (the old
   `PgvectorRepository.connect` overwrote the finalizer and leaked the previous
   connection), and provides a context manager.
-- `PgvectorStore` uses it; `LocalFAQ`/`LocalVectorFAQ` implement the same
-  pattern inline today and are candidates to reuse the mixin.
+- Every concrete index (`InMemoryIndex`, `InMemoryVectorIndex`, `LocalDbIndex`,
+  `LocalVectorDbIndex`, `PgvectorIndex`) uses it; none implement the pattern inline.
 
 ### Finalizer (resource-safety) pattern
 
-- `PgvectorStore` registers a `weakref.finalize` callback so a Postgres
+- `PgvectorIndex` registers a `weakref.finalize` callback so a Postgres
   connection is closed even if `close()` is never called explicitly.
 
 ### Protocol-based Instruction
@@ -152,13 +150,13 @@ thread, not the pipeline, is the single source of conversation history.
 
 ### SQLite as the local vector/keyword store
 
-`LocalFAQ`/`LocalVectorFAQ` persist indexes in a plain SQLite file via
+`LexicalFAQ` (via `LocalDbIndex`) and `SemanticalFAQ` (via `LocalVectorDbIndex`) persist indexes in a plain SQLite file via
 `sqlitesearch.TextSearchIndex`/`VectorSearchIndex` (vector index in `ivf`
 mode), making local RAG runs reproducible without a server.
 
 ### Data Transfer Object for search hits
 
-- `SearchResult` (`classes/vector_store.py`) is a frozen dataclass carrying
+- `SearchResult` (`classes/vector_index.py`) is a frozen dataclass carrying
   `document`, `distance` and `rank`. It keeps the cosine distance available at
   the store boundary without leaking pgvector row objects upward, and lets the
   adapter decide what to expose.
@@ -166,27 +164,27 @@ mode), making local RAG runs reproducible without a server.
 ### build_index rebuilds the FAQ content
 
 - Every `FAQ` implementation treats `build_index()` as a *rebuild* of the FAQ
-  content fetched from `RawFaq`, not as an append. `InMemoryFAQ` and
-  `InMemoryVectorFAQ` construct a fresh index object; `LocalFAQ` and
-  `LocalVectorFAQ` call `fit()` again over the same database path.
-- `PgvectorFAQ.build_index()` follows the same contract: it opens the store if
-  needed, calls `store.db_reset()` (drop and recreate the `documents` table) and
+  content fetched from `RawFaq`, not as an append. `InMemoryIndex`/`InMemoryVectorIndex`
+  construct a fresh index object; `LocalDbIndex`/`LocalVectorDbIndex` call `fit()`
+  again over the same database path.
+- `SemanticalFAQ.build_index()` follows the same contract: it opens the store if
+  needed, calls `store.reset()` (drop and recreate the `documents` table) and
   then inserts the freshly embedded FAQ items. Callers never have to connect or
   reset by hand, so `module_2/pgingestion.py` is just
-  `PgvectorFAQ(PgvectorStore(), SentenceEmbedder()).build_index()`.
+  `SemanticalFAQ(PgvectorIndex(dsn, dimension=embedder.embedding_dimension), embedder).build_index()` (as composed by `FAQSearcherFactory`).
 - Consequence: running the ingestion twice leaves the same document count
   (1427), and a brand new database (no `documents` table) is built from scratch
   with no prior setup step.
 
 ### pgvector index choices
 
-- `PgvectorStore.db_reset` drops and recreates the `documents` table and creates
+- `PgvectorIndex.reset` drops and recreates the `documents` table and creates
   an HNSW index with `vector_cosine_ops`, matching the unit-normalized
   embeddings produced by MiniLM. Vectors are inserted as `[..]::vector` text
   literals to keep the dependency set minimal (no pgvector adapter).
-- The table dimension comes from `DEFAULT_EMBEDDING_DIM` (384) or the
-  `dimension` constructor argument, so the store is not silently coupled to a
-  single embedding model.
+- The table dimension comes from the required `dimension` constructor argument,
+  which callers derive from the embedder (`SentenceEmbedder.embedding_dimension`),
+  so the store is not silently coupled to a single embedding model.
 - `search` uses the pgvector cosine operator `<=>` and selects the distance
   back, ordering by it in SQL.
 - Statements run through a single `_execute` helper that translates a missing
@@ -196,8 +194,8 @@ mode), making local RAG runs reproducible without a server.
 
 ### Open-state query instead of probing
 
-- `VectorStore` declares an `is_open` property (implemented by the
-  `ManagedResource` mixin). `PgvectorFAQ.open()` asks `store.is_open` instead of
+- `VectorIndex` declares an `is_open` property (implemented by the
+  `ManagedResource` mixin). `SemanticalFAQ.open()` asks `store.is_open` instead of
   probing the store with `count()`, which also makes opening a store whose table
   does not exist yet perfectly valid.
 
@@ -210,5 +208,5 @@ network fetch is deferred until an index build actually needs the data.
 ### Store configuration via environment
 
 - Clients resolve the `DATABASE_URL` environment variable (with `python-dotenv`)
-  and pass the DSN explicitly to `PgvectorStore`; the store requires it as a
+  and pass the DSN explicitly to `PgvectorIndex`; the store requires it as a
   constructor argument and never reads the environment itself.

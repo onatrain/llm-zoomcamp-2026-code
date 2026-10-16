@@ -8,9 +8,7 @@ from psycopg.errors import UndefinedTable
 from psycopg.rows import dict_row
 
 from classes.managed_resource import ManagedResource
-from classes.vector_store import SearchResult, Vector, VectorStore
-
-DEFAULT_EMBEDDING_DIM = 384
+from classes.vector_index import SearchResult, Vector, VectorIndex
 
 _INSERT_COLUMNS = ("course", "section", "question", "answer")
 _INSERT_SQL = """
@@ -40,10 +38,10 @@ def vector_literal(vector: NDArray[Any]) -> str:
     return "[" + ",".join(str(value) for value in vector) + "]"
 
 
-class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
+class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
     """Vector store backed by PostgreSQL with the pgvector extension."""
 
-    closed_message = "Store closed. You must connect() it first."
+    closed_message = "Database closed. You must connect() it first."
 
     def __init__(
         self, dsn: str, *, dimension: int
@@ -78,7 +76,7 @@ class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
         """Embedding dimension expected by this store."""
         return self._dimension
 
-    def connect(self) -> None:
+    def open(self) -> None:
         """Open the connection to the database.
 
         Any previously open connection is closed first.
@@ -89,7 +87,7 @@ class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
         connection = psycopg.connect(conninfo=self._dsn, row_factory=dict_row)
         self._register_resource(connection, connection.close)
 
-    def db_reset(self) -> None:
+    def reset(self) -> None:
         """Drop and recreate the ``documents`` table and its HNSW index.
 
         This operation is destructive: every stored document is deleted.
@@ -119,7 +117,7 @@ class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
 
         conn.commit()
 
-    def insert(self, document: dict[str, str], vector: Vector) -> None:
+    def add(self, document: dict[str, str], vector: Vector) -> None:
         """Insert a single document with its embedding.
 
         The insert is committed immediately.
@@ -180,7 +178,7 @@ class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
         rows: list[dict[str, Any]] = self._execute(sql, params).fetchall()
         return rows
 
-    def bulk_insert(
+    def add_all(
         self, documents: Sequence[dict[str, str]], vectors: Sequence[Vector]
     ) -> None:
         """Insert many documents with their embeddings in a single transaction.
@@ -243,7 +241,7 @@ class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
             for rank, row in enumerate(rows, start=1)
         ]
 
-    def count(self) -> int:
+    def size(self) -> int:
         """Return the number of stored documents.
 
         Returns:
@@ -270,3 +268,6 @@ class PgvectorStore(ManagedResource[Connection[dict[str, Any]]], VectorStore):
         conn = self._require_resource()
         conn.close()
         self._release_resource()
+
+
+PgVectorIndex = PgvectorIndex

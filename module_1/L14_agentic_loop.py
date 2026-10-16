@@ -3,14 +3,15 @@ from pathlib import Path
 from classes.agent import Agent
 from classes.llm_instructions import SearchAgentLLMInstruction
 from classes.llm_prompter import LLMPrompter
-from classes.local_faq import LocalFAQ
+from classes.lexical_faq import LexicalFAQ
+from classes.local_db_index import LocalDbIndex
 from classes.thread import Thread
 from classes.toolset import Toolset
 
 current_dir = Path(__file__).parent
 index_path = str(current_dir / "data/faq.db")
 
-faq = LocalFAQ(index_path)
+faq = LexicalFAQ(LocalDbIndex(index_path))
 faq.open()
 
 

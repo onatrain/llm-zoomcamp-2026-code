@@ -8,10 +8,13 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 - `classes/` — reusable library (FAQ searchers, embedders, RAG pipeline, Agent/Toolset stack, vector stores). Entrypoint for config composition: `classes/faq_searcher_factory.py`.
   - `faq.py` — `FAQ` contract (open/search/close/build_index/count); other indexes are `FAQ` adapters. `build_index()` always *rebuilds* the FAQ content fetched from `RawFaq`; for pgvector that means the adapter resets the store itself.
-  - `vector_store.py` — `VectorStore` ABC + `SearchResult` for vector-database stores.
+  - `vector_index.py` — `VectorIndex` port + `SearchResult` for vector indexes.
+- `keyword_index.py` — `KeywordIndex` port for lexical indexes.
   - `managed_resource.py` — `ManagedResource` mixin: open/close lifecycle, finalizers, context manager.
-  - `pgvector_store.py` — `PgvectorStore`, the psycopg/pgvector `VectorStore` implementation.
-  - `pgvector_faq.py` — `PgvectorFAQ`, `FAQ` adapter over any `VectorStore` + `Embedder`.
+  - `pgvector_index.py` — `PgvectorIndex`, the psycopg/pgvector `VectorIndex` implementation.
+  - `semantical_faq.py` — `SemanticalFAQ`, `FAQ` adapter over any `VectorIndex` + `Embedder`.
+- `lexical_faq.py` — `LexicalFAQ`, `FAQ` adapter over any `KeywordIndex`.
+- `in_memory_index.py`, `in_memory_vector_index.py`, `local_db_index.py`, `local_vector_db_index.py` — concrete index implementations.
 - `module_1/` — keyword-search RAG scripts (minsearch, sqlitesearch, function calling, agentic loop).
 - `module_2/` — vector-search scripts (sentence-transformers, numpy dot-product search, pgvector).
 - `utils/` — shared helpers (`llm`, `build_prompt`), importable from the repo root.
@@ -47,8 +50,4 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 ## Pending
 
-- Redesign `FAQSearcherFactory` to remove the nested `match` blocks and the hardwired concrete classes (registry/provider based), injecting the embedder instead of building a new one per call. Detailed plan: `docs/searcher_factory_redesign.md`.
-- The same redesign must wire pgvector into the search stack: support `index_type="repository"` (with `vector_engine="sentence"`) mapping to `PgvectorFAQ(PgvectorStore(...), embedder)`.
-- Decompose the other `FAQ` implementations the same way as pgvector (`FAQ` adapter + technology-specific store, reusing the `ManagedResource` mixin): `InMemoryFAQ` and `LocalFAQ`/`LocalVectorFAQ`.
-- Derive `DEFAULT_EMBEDDING_DIM` in `classes/pgvector_store.py` from a calculation (e.g. embedding a probe text with the same embedder) instead of hardcoding 384.
-
+- Update `docs/architecture.md` references to the new Ports/Indexes/Adapters naming.

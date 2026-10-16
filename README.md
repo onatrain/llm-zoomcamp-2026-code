@@ -1,7 +1,7 @@
 ## LLM Zoomcamp 2026 Course Code
 
 This is my participation in the free course LLM Zoomcamp started on June 8th, 2026. I'll publish code exercises from
-the course here, made my way, because Python scripts are more friendly to me than Jupyter Notebooks.
+the course here, made my way, because Python scripts are more friendly for me than Jupyter Notebooks.
 
 In this repo you will find tests, prototypes and course code following the course contents published at
 [LLM Zoomcamp repo](https://github.com/DataTalksClub/llm-zoomcamp/tree/main)
@@ -18,8 +18,23 @@ git clone https://github.com/onatrain/llm-zoomcamp-2026-code.git your-local-dire
 
 Install dependencies
 ```bash
+cd your-local-directory/
 uv sync
 ```
+
+Create your own .env file for your secrets
+```bash
+cp .env.example .env
+```
+
+Edit your .env file and set your llm provider api key, base_url and postgres/pgvector dns into LLM_API_KEY, LLM_BASE_URL and DATABASE_URL 
+
+Create your own .env.docker file for your docker containerized services secrets
+```bash
+cp .env.docker.example .env.docker
+```
+
+Edit your .env.docker file and set your db name, db user and db password into the service variables 
 
 Run some program. Any program, specially those that import other programs, can be run with PYTHONPATH. By example:
 ```bash
@@ -38,11 +53,12 @@ uv run python -m module_1.L9_rag_sqlitesearch
 A small library of reusable components for building RAG pipelines and agents over the course FAQ data. Features include:
 
 - Abstract `FAQ` interface with in-memory, local SQLite, and pgvector implementations
-- Keyword search (minsearch) and vector search (sentence-transformers embeddings)
-- `FAQSearcherFactory` and `SearcherConfig` to compose searchers from a single config
+- Ports/Indexes: `VectorIndex` and `KeywordIndex`; adapters: `SemanticalFAQ` and `LexicalFAQ`
+- Keyword search (minsearch & sqlitesearch) and vector search (sentence-transformers embeddings)
+- `FAQSearcherFactory` (provider registry based) and `SearcherConfig` to compose searchers from a single config
 - Prompt building (`PromptBuilder`, `Thread`, `LLMInstruction`) and RAG orchestration (`RAGPipeline`)
 - An `Agent` / `LLMPrompter` / `Toolset` stack for tool-calling agentic loops
-- Data ingestion helpers (`RawFaq`, `SentenceEmbedder`, `PgvectorRepository`)
+- Data ingestion helpers (`RawFaq`, `SentenceEmbedder`, `PgvectorIndex`)
 
 ### module_1
 
@@ -67,6 +83,23 @@ Scripts extending the RAG pipeline with vector search and embeddings. Features i
 - Approximate vector search with minsearch `VectorSearch` and course filters
 - Building local and in-memory vector FAQ indexes
 - RAG pipelines using sentence-embedding vector search, backed by local SQLite and pgvector
+
+### Classes relationship
+
+- FAQ, VectorIndex, KeywordIndex, and Embedder are abstract classes.
+- ManagedResource is the generic mixin base of every concrete index (InMemoryIndex, InMemoryVectorIndex, LocalDbIndex, LocalVectorDbIndex, PgVectorIndex).
+- SemanticalFAQ implements FAQ and adapts any VectorIndex using an Embedder.
+- LexicalFAQ implements FAQ and adapts any KeywordIndex.
+- PgVectorIndex implements VectorIndex (and ManagedResource) and uses PostgreSQL/pgvector.
+- LocalVectorDbIndex implements VectorIndex (and ManagedResource) and uses sqlitesearch.
+- InMemoryVectorIndex implements VectorIndex (and ManagedResource) and uses minsearch.
+- InMemoryIndex implements KeywordIndex (and ManagedResource) and uses minsearch.
+- LocalDbIndex implements KeywordIndex (and ManagedResource) and uses sqlitesearch.
+- SentenceEmbedder implements Embedder and uses sentence-transformers.
+- SearchResult is the value object returned by VectorIndex searches.
+- RawFaq supplies the FAQ items consumed by SemanticalFAQ and LexicalFAQ in build_index().
+- FAQSearcher wraps a FAQ instance.
+- RAGPipeline composes a FAQSearcher, a PromptBuilder, and an LLMPrompter.
 
 ## License
 

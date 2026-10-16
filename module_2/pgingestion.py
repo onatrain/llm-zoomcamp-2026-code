@@ -2,8 +2,8 @@ import os
 
 import dotenv
 
-from classes.pgvector_faq import PgvectorFAQ
-from classes.pgvector_store import PgvectorStore
+from classes.pgvector_index import PgvectorIndex
+from classes.semantical_faq import SemanticalFAQ
 from classes.sentence_embedder import SentenceEmbedder
 
 dotenv.load_dotenv()
@@ -13,8 +13,8 @@ if not dsn or not dsn.strip():
     raise ValueError("DATABASE_URL must be set")
 
 embedder = SentenceEmbedder()
-faq = PgvectorFAQ(
-    PgvectorStore(dsn, dimension=embedder.embedding_dimension), embedder
+faq = SemanticalFAQ(
+    PgvectorIndex(dsn, dimension=embedder.embedding_dimension), embedder
 )
 
 faq.build_index()

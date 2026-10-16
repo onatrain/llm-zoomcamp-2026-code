@@ -13,12 +13,13 @@ from openai.types.responses import (
 )
 from openai.types.responses.response_input_item_param import FunctionCallOutput
 
-from classes.local_faq import LocalFAQ
+from classes.lexical_faq import LexicalFAQ
+from classes.local_db_index import LocalDbIndex
 
 current_dir = Path(__file__).parent
 index_path = str(current_dir / "data/faq.db")
 
-faq = LocalFAQ(index_path)
+faq = LexicalFAQ(LocalDbIndex(index_path))
 faq.open()
 
 dotenv.load_dotenv()
