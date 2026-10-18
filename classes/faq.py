@@ -17,6 +17,11 @@ class FAQ(ABC):
 
     @abstractmethod
     def build_index(self) -> None:
+        """Rebuild the index with the current FAQ content.
+
+        Implementations must keep the previous content untouched when the new
+        content cannot be fetched or embedded.
+        """
         raise NotImplementedError
 
     @property

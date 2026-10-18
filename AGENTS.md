@@ -50,4 +50,4 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 ## Pending
 
-- Update `docs/architecture.md` references to the new Ports/Indexes/Adapters naming.
+- Integrate PgVectorIndex to the RAG pipeline and test it.

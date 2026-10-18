@@ -2,7 +2,7 @@ from classes.thread import Thread
 from utils.build_prompt import build_prompt
 
 
-class PromptBuilder():
+class PromptBuilder:
     def __init__(self, thread: Thread):
         self._thread = thread
 

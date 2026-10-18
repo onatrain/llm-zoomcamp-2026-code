@@ -42,15 +42,8 @@ class LocalDbIndex(ManagedResource[TextSearchIndex], KeywordIndex):
             raise RuntimeError(self.closed_message)
         index.clear()
 
-    def add(self, document: dict[str, str]) -> None:
-        if self._index is None:
-            self.open()
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
-        index.add(document)
-
-    def add_all(self, documents: Sequence[dict[str, str]]) -> None:
+    def load(self, documents: Sequence[dict[str, str]]) -> None:
+        """Load many documents into the index (populate it)."""
         if self._index is None:
             self.open()
         index = self._index

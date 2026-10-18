@@ -88,7 +88,9 @@ class LocalVectorDbIndex(ManagedResource[VectorSearchIndex], VectorIndex):
             else:
                 distance = 0.0
                 document = dict(row) if hasattr(row, "items") else {"value": str(row)}
-            results.append(SearchResult(document=document, distance=distance, rank=rank))
+            results.append(
+                SearchResult(document=document, distance=distance, rank=rank)
+            )
 
         return results
 

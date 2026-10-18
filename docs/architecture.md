@@ -172,6 +172,11 @@ mode), making local RAG runs reproducible without a server.
   then inserts the freshly embedded FAQ items. Callers never have to connect or
   reset by hand, so `module_2/pgingestion.py` is just
   `SemanticalFAQ(PgvectorIndex(dsn, dimension=embedder.embedding_dimension), embedder).build_index()` (as composed by `FAQSearcherFactory`).
+- The destructive step (`store.reset()`) only runs after the new content was
+  fetched and embedded, so a failed download or embedding leaves the previous
+  index untouched. Both adapters also abort before resetting when the source
+  returns no documents, and `SemanticalFAQ` validates that the embedder returned
+  one vector per document with the declared dimension.
 - Consequence: running the ingestion twice leaves the same document count
   (1427), and a brand new database (no `documents` table) is built from scratch
   with no prior setup step.

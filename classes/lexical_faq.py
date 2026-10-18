@@ -33,9 +33,24 @@ class LexicalFAQ(FAQ):
         self._index.close()
 
     def build_index(self) -> None:
+        """Rebuild the index from the current FAQ content.
+
+        The previous content is only replaced once the new content has been
+        fetched, so a failed download leaves the index untouched.
+
+        Raises:
+            RuntimeError: If the FAQ source returns no documents.
+        """
+        faq_items = RawFaq().items
+        if not faq_items:
+            raise RuntimeError(
+                "The FAQ source returned no documents; the index was not modified"
+            )
+
         self.open()
+
         self._index.reset()
-        self._index.add_all(RawFaq().items)
+        self._index.load(faq_items)
 
     @property
     def count(self) -> int:

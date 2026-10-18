@@ -36,7 +36,9 @@ class LLMInstruction(Protocol):
 @dataclass
 class PipelineLLMInstruction:
     prompt: EasyInputMessageParam = field(
-        default_factory=lambda: EasyInputMessageParam(role="system", content=PIPELINE_INSTRUCTION)
+        default_factory=lambda: EasyInputMessageParam(
+            role="system", content=PIPELINE_INSTRUCTION
+        )
     )
     message: str = PIPELINE_INSTRUCTION
 
@@ -44,7 +46,8 @@ class PipelineLLMInstruction:
 @dataclass
 class SearchAgentLLMInstruction:
     prompt: EasyInputMessageParam = field(
-        default_factory=lambda: EasyInputMessageParam(role="system", content=SEARCH_AGENT_INSTRUCTION)
+        default_factory=lambda: EasyInputMessageParam(
+            role="system", content=SEARCH_AGENT_INSTRUCTION
+        )
     )
     message: str = SEARCH_AGENT_INSTRUCTION
-

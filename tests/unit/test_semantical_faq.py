@@ -38,6 +38,22 @@ class StubRawFaq:
         return [dict(document) for document in DOCUMENTS]
 
 
+class ExplodingRawFaq:
+    """RawFaq replacement whose fetch always fails."""
+
+    @property
+    def items(self) -> list[dict[str, str]]:
+        raise RuntimeError("the remote FAQ is unreachable")
+
+
+class EmptyRawFaq:
+    """RawFaq replacement that serves no documents."""
+
+    @property
+    def items(self) -> list[dict[str, str]]:
+        return []
+
+
 class StubEmbedder(Embedder):
     """Deterministic embedder that records the embedded texts."""
 
@@ -114,6 +130,76 @@ def test_open_rejects_an_index_dimension_mismatch(
 
     with pytest.raises(ValueError, match="dimension"):
         faq.open()
+
+
+def test_failed_source_keeps_the_previous_index(
+    faq: SemanticalFAQ, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+    monkeypatch.setattr(semantical_faq, "RawFaq", ExplodingRawFaq)
+
+    with pytest.raises(RuntimeError, match="unreachable"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
+    results = faq.search("how do I install the environment?", num_results=2)
+    assert results[0]["question"] == DOCUMENTS[0]["question"]
+
+
+def test_failed_embedding_keeps_the_previous_index(
+    faq: SemanticalFAQ, embedder: StubEmbedder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+
+    def fail(texts: list[str]) -> NDArray[np.float64]:
+        raise RuntimeError("the embedding model failed")
+
+    monkeypatch.setattr(embedder, "embed_texts", fail)
+
+    with pytest.raises(RuntimeError, match="embedding model failed"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
+
+
+def test_empty_corpus_aborts_without_touching_the_index(
+    faq: SemanticalFAQ, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+    monkeypatch.setattr(semantical_faq, "RawFaq", EmptyRawFaq)
+
+    with pytest.raises(RuntimeError, match="no documents"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
+
+
+def test_misaligned_embeddings_abort_without_touching_the_index(
+    faq: SemanticalFAQ, embedder: StubEmbedder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+    monkeypatch.setattr(
+        embedder, "embed_texts", lambda texts: np.array([[1.0, 1.0, 0.0]])
+    )
+
+    with pytest.raises(ValueError, match="same amount"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
+
+
+def test_wrong_embedding_dimension_aborts_without_touching_the_index(
+    faq: SemanticalFAQ, embedder: StubEmbedder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+    monkeypatch.setattr(
+        embedder, "embed_texts", lambda texts: np.zeros((len(texts), 5))
+    )
+
+    with pytest.raises(ValueError, match="dimension"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
 
 
 def test_count_requires_an_open_index(tmp_path: Path) -> None:

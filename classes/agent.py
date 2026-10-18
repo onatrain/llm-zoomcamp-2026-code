@@ -8,12 +8,17 @@ from classes.thread import Thread
 from classes.toolset import Toolset
 
 
-class Agent():
+class Agent:
     def __init__(self, prompter: LLMPrompter, thread: Thread):
         self._prompter = prompter
         self._thread = thread
 
-    def invoke(self, toolset: Toolset, model: str = "nemotron-3-ultra:cloud", verbose: bool = False) -> str:
+    def invoke(
+        self,
+        toolset: Toolset,
+        model: str = "nemotron-3-ultra:cloud",
+        verbose: bool = False,
+    ) -> str:
         """Runs an agentic loop until the model returns a final response
 
         :param toolset: Set of tools the agent can work with
@@ -28,7 +33,9 @@ class Agent():
             if verbose:
                 print("Thread antes del llamado:", self._thread.get_input())
 
-            response: AgentResponse = self._prompter.agentic_call(self._thread, tools, model=model)
+            response: AgentResponse = self._prompter.agentic_call(
+                self._thread, tools, model=model
+            )
 
             if verbose:
                 print("Response:", response, "\n")
@@ -47,9 +54,7 @@ class Agent():
                             item.call_id, item.name, item.arguments
                         )
                         call_result = callbacks[item.name](**item.arguments)  # type: ignore
-                        self._thread.add_function_call_output(
-                            item.call_id, call_result
-                        )
+                        self._thread.add_function_call_output(item.call_id, call_result)
                         tool_called_flag = True
 
                     case _:

@@ -14,6 +14,14 @@ from classes.lexical_faq import LexicalFAQ
 from classes.local_db_index import LocalDbIndex
 
 
+class ExplodingRawFaq:
+    """RawFaq replacement whose fetch always fails."""
+
+    @property
+    def items(self) -> list[dict[str, str]]:
+        raise RuntimeError("the remote FAQ is unreachable")
+
+
 @pytest.fixture(scope="module")
 def db_path(tmp_path_factory: pytest.TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp("local_db") / "faq.db")
@@ -68,3 +76,19 @@ def test_index_persists_across_instances(
     assert any(result["question"] == target_faq_item["question"] for result in results)
 
     reopened.close()
+
+
+def test_failed_rebuild_keeps_the_previous_index(
+    faq: LexicalFAQ,
+    real_faq_items: list[dict[str, str]],
+    target_faq_item: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(lexical_faq, "RawFaq", ExplodingRawFaq)
+
+    with pytest.raises(RuntimeError, match="unreachable"):
+        faq.build_index()
+
+    assert faq.count == len(real_faq_items)
+    results = faq.search(target_faq_item["question"], num_results=10)
+    assert any(result["question"] == target_faq_item["question"] for result in results)

@@ -10,12 +10,14 @@ class AgentTool:
     callback: Callable[[Any], Any]
 
 
-class Toolset():
+class Toolset:
     def __init__(self) -> None:
         self._tools: list[AgentTool] = []
 
     def add(self, definition: dict[str, Any], callback: Callable[[Any], Any]) -> None:
-        new_tool = AgentTool(definition=cast(FunctionToolParam, definition), callback=callback)
+        new_tool = AgentTool(
+            definition=cast(FunctionToolParam, definition), callback=callback
+        )
         self._tools.append(new_tool)
 
     def get_definitions(self) -> list[FunctionToolParam]:

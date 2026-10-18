@@ -17,11 +17,16 @@ class RAGPipeline:
     def answer(self, question: str) -> str:
         retrieval = self._searcher.search(question)
 
-        thread = self._prompt_builder.build(question, retrieval)  # crea el user prompt y lo anexa al hilo y lo retorna
+        thread = self._prompt_builder.build(
+            question, retrieval
+        )  # crea el user prompt y lo anexa al hilo y lo retorna
 
-        generation = self._llm_prompter.generate(thread)  # recibe y trabaja con el hilo actual
+        generation = self._llm_prompter.generate(
+            thread
+        )  # recibe y trabaja con el hilo actual
 
         return generation
+
 
 """
 En answer:

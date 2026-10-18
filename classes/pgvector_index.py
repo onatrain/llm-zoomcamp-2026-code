@@ -269,6 +269,3 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         conn = self._require_resource()
         conn.close()
         self._release_resource()
-
-
-PgVectorIndex = PgvectorIndex

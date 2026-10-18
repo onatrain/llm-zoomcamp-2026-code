@@ -14,10 +14,11 @@ class SemanticalFAQ(FAQ):
         self._embedder = embedder
 
     def open(self) -> None:
-        if hasattr(self._index, "dimension") and self._index.dimension != self._embedder.embedding_dimension:
-            raise ValueError(
-                "Index dimension does not match embedder dimension"
-            )
+        if (
+            hasattr(self._index, "dimension")
+            and self._index.dimension != self._embedder.embedding_dimension
+        ):
+            raise ValueError("Index dimension does not match embedder dimension")
 
         if not self._index.is_open:
             self._index.open()
@@ -42,15 +43,41 @@ class SemanticalFAQ(FAQ):
         self._index.close()
 
     def build_index(self) -> None:
-        self.open()
+        """Rebuild the index from the current FAQ content.
 
-        self._index.reset()
+        The previous content is only replaced once the new content has been
+        fetched and embedded, so failed downloads or embeddings leave the
+        index untouched.
 
+        Raises:
+            RuntimeError: If the FAQ source returns no documents.
+            ValueError: If the embedder returns an unexpected amount of vectors
+                or vectors with a dimension different from the declared one.
+        """
         faq_items = RawFaq().items
+        if not faq_items:
+            raise RuntimeError(
+                "The FAQ source returned no documents; the index was not modified"
+            )
 
         texts = [" ".join((item["question"], item["answer"])) for item in faq_items]
 
         embeddings = self._embedder.embed_texts(texts)
+
+        if len(embeddings) != len(faq_items):
+            raise ValueError(
+                f"Got {len(faq_items)} documents and {len(embeddings)} embeddings, "
+                "they must be the same amount"
+            )
+
+        if embeddings.shape[1] != self._embedder.embedding_dimension:
+            raise ValueError(
+                "Embedding dimension does not match the embedder dimension"
+            )
+
+        self.open()
+
+        self._index.reset()
 
         self._index.add_all(faq_items, list(embeddings))
 

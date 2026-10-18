@@ -20,36 +20,48 @@ class Thread:
 
     def add_user_message(self, content: str) -> None:
         """Adds a user message to the thread."""
-        self._items.append(EasyInputMessageParam(
-            type="message",
-            role="user",
-            content=content,
-        ))
+        self._items.append(
+            EasyInputMessageParam(
+                type="message",
+                role="user",
+                content=content,
+            )
+        )
 
     def add_assistant_text(self, content: str) -> None:
         """Adds an assistant message to the thread (without tool calls)."""
-        self._items.append(EasyInputMessageParam(
-            type="message",
-            role="assistant",
-            content=content,
-        ))
+        self._items.append(
+            EasyInputMessageParam(
+                type="message",
+                role="assistant",
+                content=content,
+            )
+        )
 
-    def add_function_call(self, call_id: str, name: str, arguments: dict[str, Any]) -> None:
+    def add_function_call(
+        self, call_id: str, name: str, arguments: dict[str, Any]
+    ) -> None:
         """Adds a function call to the thread."""
-        self._items.append(ResponseFunctionToolCallParam(
-            type="function_call",
-            call_id=call_id,
-            name=name,
-            arguments=json.dumps(arguments),
-        ))
+        self._items.append(
+            ResponseFunctionToolCallParam(
+                type="function_call",
+                call_id=call_id,
+                name=name,
+                arguments=json.dumps(arguments),
+            )
+        )
 
     def add_function_call_output(self, call_id: str, output: Any) -> None:
         """Adds a results function call message to the thread."""
-        self._items.append(FunctionCallOutput(
-            type="function_call_output",
-            call_id=call_id,
-            output=json.dumps(output) if isinstance(output, (dict, list)) else str(output),
-        ))
+        self._items.append(
+            FunctionCallOutput(
+                type="function_call_output",
+                call_id=call_id,
+                output=json.dumps(output)
+                if isinstance(output, (dict, list))
+                else str(output),
+            )
+        )
 
     def get_input(self) -> list[ResponseInputItemParam]:
         """Return the full items list."""

@@ -26,13 +26,8 @@ class KeywordIndex(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def add(self, document: dict[str, str]) -> None:
-        """Add a single document."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def add_all(self, documents: Sequence[dict[str, str]]) -> None:
-        """Add many documents."""
+    def load(self, documents: Sequence[dict[str, str]]) -> None:
+        """Load many documents into the index (populate it)."""
         raise NotImplementedError
 
     @abstractmethod

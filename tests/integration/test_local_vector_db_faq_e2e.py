@@ -16,6 +16,14 @@ from classes.semantical_faq import SemanticalFAQ
 from classes.sentence_embedder import SentenceEmbedder
 
 
+class ExplodingRawFaq:
+    """RawFaq replacement whose fetch always fails."""
+
+    @property
+    def items(self) -> list[dict[str, str]]:
+        raise RuntimeError("the remote FAQ is unreachable")
+
+
 @pytest.fixture(scope="module")
 def db_path(tmp_path_factory: pytest.TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp("local_vector_db") / "vector_faq.db")
@@ -86,3 +94,19 @@ def test_index_persists_across_instances(
     assert any(result["question"] == target_faq_item["question"] for result in results)
 
     reopened.close()
+
+
+def test_failed_rebuild_keeps_the_previous_index(
+    faq: SemanticalFAQ,
+    real_faq_items: list[dict[str, str]],
+    target_faq_item: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(semantical_faq, "RawFaq", ExplodingRawFaq)
+
+    with pytest.raises(RuntimeError, match="unreachable"):
+        faq.build_index()
+
+    assert faq.count == len(real_faq_items)
+    results = faq.search(target_faq_item["question"], num_results=5)
+    assert any(result["question"] == target_faq_item["question"] for result in results)

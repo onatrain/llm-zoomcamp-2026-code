@@ -32,6 +32,22 @@ class StubRawFaq:
         return [dict(document) for document in DOCUMENTS]
 
 
+class ExplodingRawFaq:
+    """RawFaq replacement whose fetch always fails."""
+
+    @property
+    def items(self) -> list[dict[str, str]]:
+        raise RuntimeError("the remote FAQ is unreachable")
+
+
+class EmptyRawFaq:
+    """RawFaq replacement that serves no documents."""
+
+    @property
+    def items(self) -> list[dict[str, str]]:
+        return []
+
+
 @pytest.fixture
 def faq(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> LexicalFAQ:
     monkeypatch.setattr(lexical_faq, "RawFaq", StubRawFaq)
@@ -58,6 +74,32 @@ def test_search_finds_a_built_document(faq: LexicalFAQ) -> None:
     results = faq.search("prerequisites", num_results=5)
 
     assert any(result["question"] == DOCUMENTS[1]["question"] for result in results)
+
+
+def test_failed_download_keeps_the_previous_index(
+    faq: LexicalFAQ, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+    monkeypatch.setattr(lexical_faq, "RawFaq", ExplodingRawFaq)
+
+    with pytest.raises(RuntimeError, match="unreachable"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
+    results = faq.search("prerequisites", num_results=5)
+    assert any(result["question"] == DOCUMENTS[1]["question"] for result in results)
+
+
+def test_empty_corpus_aborts_without_touching_the_index(
+    faq: LexicalFAQ, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    faq.build_index()
+    monkeypatch.setattr(lexical_faq, "RawFaq", EmptyRawFaq)
+
+    with pytest.raises(RuntimeError, match="no documents"):
+        faq.build_index()
+
+    assert faq.count == len(DOCUMENTS)
 
 
 def test_count_requires_an_open_index(tmp_path: Path) -> None:

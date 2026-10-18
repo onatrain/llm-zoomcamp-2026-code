@@ -9,20 +9,31 @@ from classes.managed_resource import ManagedResource
 
 
 class InMemoryIndex(ManagedResource[Index], KeywordIndex):
-    """In-memory keyword index using minsearch."""
+    """In-memory keyword index using minsearch.
+
+    The index is volatile: its state is never persisted, so opening it always
+    yields a fresh, empty instance. ``reset()`` is therefore a no-op that
+    exists only to satisfy the ``KeywordIndex`` contract invoked by
+    ``LexicalFAQ.build_index``.
+    """
 
     closed_message = "Index closed. You must open() it first."
 
     def __init__(self) -> None:
+        """Initialize a closed, empty in-memory index."""
         super().__init__()
         self._index: Index | None = None
-        self._documents: list[dict[str, str]] = []
 
     @property
     def is_open(self) -> bool:
+        """Whether the index is currently open."""
         return self._index is not None
 
     def open(self) -> None:
+        """Create a fresh, empty in-memory index.
+
+        If the index is already open, it is closed first.
+        """
         if self.is_open:
             self.close()
 
@@ -32,25 +43,27 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         )
 
     def reset(self) -> None:
-        self.close()
-        self._documents = []
-        self.open()
+        """No-op reset for the volatile in-memory index.
 
-    def add(self, document: dict[str, str]) -> None:
-        self.add_all([document])
+        The index is never persisted and ``open()`` already discards any
+        previous content by creating a new empty ``Index``, so there is nothing
+        to clear. The method exists only to honour the ``KeywordIndex``
+        contract invoked by ``LexicalFAQ.build_index``.
+        """
+        pass
 
-    def add_all(self, documents: Sequence[dict[str, str]]) -> None:
-        self._documents.extend(documents)
+    def load(self, documents: Sequence[dict[str, str]]) -> None:
+        """Replace the index content with the given documents.
 
-        if not self.is_open:
+        Args:
+            documents: Documents to fit into the index.
+        """
+        if self._index is None:
             self.open()
-
-        if self._documents:
-            self._index = Index(
-                text_fields=["question", "section", "answer"],
-                keyword_fields=["course"],
-            )
-            self._index.fit(self._documents)
+        index = self._index
+        if index is None:
+            raise RuntimeError(self.closed_message)
+        index.fit(list(documents))
 
     def search(
         self,
@@ -59,10 +72,22 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         boost_dict: dict[str, float] | None = None,
         num_results: int = 10,
     ) -> list[dict[str, str]]:
-        if not self.is_open or self._index is None:
+        """Search the index.
+
+        Args:
+            question: Query text.
+            filter_dict: Optional field filters.
+            boost_dict: Optional field boosts.
+            num_results: Maximum number of results.
+
+        Returns:
+            Matching documents.
+        """
+        index = self._index
+        if index is None:
             raise RuntimeError(self.closed_message)
 
-        results = self._index.search(
+        results = index.search(
             question,
             filter_dict=filter_dict,
             boost_dict=boost_dict,
@@ -71,10 +96,17 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         return list(results)
 
     def size(self) -> int:
-        if not self.is_open or self._index is None:
+        """Return the number of stored documents.
+
+        Returns:
+            Document count.
+        """
+        index = self._index
+        if index is None:
             raise RuntimeError(self.closed_message)
-        return len(self._documents)
+        return len(index.docs)
 
     def close(self) -> None:
+        """Close the index and release managed resources."""
         self._index = None
-        self._documents = []
+        self._release_resource()

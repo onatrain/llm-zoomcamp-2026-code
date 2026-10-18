@@ -27,14 +27,14 @@ def index(tmp_path: Path) -> LocalDbIndex:
     return LocalDbIndex(str(tmp_path / "faq.db"))
 
 
-def test_add_all_indexes_documents(index: LocalDbIndex) -> None:
-    index.add_all(DOCUMENTS)
+def test_load_indexes_documents(index: LocalDbIndex) -> None:
+    index.load(DOCUMENTS)
 
     assert index.size() == len(DOCUMENTS)
 
 
 def test_search_returns_matching_documents(index: LocalDbIndex) -> None:
-    index.add_all(DOCUMENTS)
+    index.load(DOCUMENTS)
 
     results = index.search("virtual environment", num_results=5)
 
@@ -43,7 +43,7 @@ def test_search_returns_matching_documents(index: LocalDbIndex) -> None:
 
 
 def test_search_returns_the_stored_fields(index: LocalDbIndex) -> None:
-    index.add_all(DOCUMENTS)
+    index.load(DOCUMENTS)
 
     results = index.search("prerequisites", num_results=5)
 
@@ -52,7 +52,7 @@ def test_search_returns_the_stored_fields(index: LocalDbIndex) -> None:
 
 
 def test_search_respects_the_course_filter(index: LocalDbIndex) -> None:
-    index.add_all(DOCUMENTS)
+    index.load(DOCUMENTS)
 
     results = index.search(
         "prerequisites", filter_dict={"course": "mlops-zoomcamp"}, num_results=5
@@ -63,17 +63,17 @@ def test_search_respects_the_course_filter(index: LocalDbIndex) -> None:
 
 
 def test_reset_clears_the_index(index: LocalDbIndex) -> None:
-    index.add_all(DOCUMENTS)
+    index.load(DOCUMENTS)
 
     index.reset()
 
     assert index.size() == 0
 
 
-def test_add_reopens_a_closed_index(index: LocalDbIndex) -> None:
+def test_load_reopens_a_closed_index(index: LocalDbIndex) -> None:
     index.close()
 
-    index.add(DOCUMENTS[0])
+    index.load([DOCUMENTS[0]])
 
     assert index.is_open
     assert index.size() == 1
@@ -92,7 +92,7 @@ def test_size_requires_an_open_index(index: LocalDbIndex) -> None:
 def test_documents_persist_across_instances(tmp_path: Path) -> None:
     db_path = str(tmp_path / "faq.db")
     first = LocalDbIndex(db_path)
-    first.add_all(DOCUMENTS)
+    first.load(DOCUMENTS)
     first.close()
 
     second = LocalDbIndex(db_path)

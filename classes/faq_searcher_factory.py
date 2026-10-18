@@ -93,13 +93,9 @@ class FAQSearcherFactory:
     def create(
         self, config: SearcherConfig, embedder: object | None = None
     ) -> FAQSearcher:
-        resolved_embedder = (
-            embedder if embedder is not None else self._embedder
-        )
+        resolved_embedder = embedder if embedder is not None else self._embedder
 
-        provider = _PROVIDER_REGISTRY.get(
-            (config.index_type, config.vector_engine)
-        )
+        provider = _PROVIDER_REGISTRY.get((config.index_type, config.vector_engine))
         if provider is None:
             raise ValueError(
                 f"Unknown index type/vector engine: "
