@@ -258,12 +258,13 @@ def test_reopening_local_db_closes_the_previous_index(
     index = LocalDbIndex(str(tmp_path / "faq.db"))
 
     index.open()
-    first = index._index
+    first = index._resource
     index.open()
 
     assert isinstance(first, _RecordingTextSearchIndex)
     assert first.close_calls == 1
-    assert index._index is not first
+    assert index._resource is not first
+    assert index.is_open is True
 
     index.close()
 
