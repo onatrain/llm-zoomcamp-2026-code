@@ -1,5 +1,6 @@
 """In-memory keyword index backed by ``minsearch.Index``."""
 
+from functools import partial
 from typing import Sequence
 
 from minsearch import Index
@@ -9,6 +10,24 @@ from classes.managed_resource import ManagedResource
 from utils.normalize import normalize_index_param
 
 
+def _clear_index(index: Index) -> None:
+    """Release the heavy in-memory structures held by a minsearch Index.
+
+    This smell is caused by the lack of explicit memory cleaning in
+    minsearch.Index
+
+    Args:
+        index: The index whose internal buffers must be cleared.
+    """
+    index.docs = []
+    index.text_matrices = {}
+    index.keyword_df = None
+    index.numeric_df = None
+    index.date_df = None
+    index._filter = None
+    index.vectorizers = {}
+
+
 class InMemoryIndex(ManagedResource[Index], KeywordIndex):
     """In-memory keyword index using minsearch.
 
@@ -16,6 +35,10 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
     yields a fresh, empty instance. ``reset()`` is therefore a no-op that
     exists only to satisfy the ``KeywordIndex`` contract invoked by
     ``LexicalFAQ.build_index``.
+
+    The underlying ``minsearch.Index`` has no ``close()`` method, so a closer
+    that clears its heavy buffers is registered with ``ManagedResource`` and
+    runs both on explicit ``close()`` and on garbage collection.
     """
 
     closed_message = "Index closed. You must open() it first."
@@ -23,12 +46,6 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
     def __init__(self) -> None:
         """Initialize a closed, empty in-memory index."""
         super().__init__()
-        self._index: Index | None = None
-
-    @property
-    def is_open(self) -> bool:
-        """Whether the index is currently open."""
-        return self._index is not None
 
     def open(self) -> None:
         """Create a fresh, empty in-memory index.
@@ -38,10 +55,11 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         if self.is_open:
             self.close()
 
-        self._index = Index(
+        index = Index(
             text_fields=["question", "section", "answer"],
             keyword_fields=["course"],
         )
+        self._register_resource(index, partial(_clear_index, index))
 
     def reset(self) -> None:
         """No-op reset for the volatile in-memory index.
@@ -51,6 +69,9 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         to clear. The method exists only to honour the ``KeywordIndex``
         contract invoked by ``LexicalFAQ.build_index``.
         """
+        # Volatile index: ``open()`` already discards any previous content by
+        # creating a brand-new, empty ``Index``. There is nothing to clear here;
+        # the method only honours the KeywordIndex/LexicalFAQ contract.
         pass
 
     def load(self, documents: Sequence[dict[str, str]]) -> None:
@@ -59,11 +80,9 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         Args:
             documents: Documents to fit into the index.
         """
-        if self._index is None:
+        if not self.is_open:
             self.open()
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
+        index = self._require_resource()
         index.fit(list(documents))
 
     def search(
@@ -71,7 +90,7 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         question: str,
         filter_dict: dict[str, str] | None = None,
         boost_dict: dict[str, float] | None = None,
-        num_results: int = 5,
+        num_results: int = 10,
     ) -> list[dict[str, str]]:
         """Search the index.
 
@@ -83,11 +102,11 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
 
         Returns:
             Matching documents.
-        """
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
 
+        Raises:
+            RuntimeError: If the index is closed.
+        """
+        index = self._require_resource()
         normalized_filter = normalize_index_param(filter_dict)
         normalized_boost = normalize_index_param(boost_dict)
 
@@ -104,13 +123,15 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
 
         Returns:
             Document count.
+
+        Raises:
+            RuntimeError: If the index is closed.
         """
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
-        return len(index.docs)
+        return len(self._require_resource().docs)
 
     def close(self) -> None:
         """Close the index and release managed resources."""
-        self._index = None
+        resource = self._resource
+        if resource is not None:
+            _clear_index(resource)
         self._release_resource()
