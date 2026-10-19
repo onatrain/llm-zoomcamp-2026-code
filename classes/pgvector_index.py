@@ -8,7 +8,7 @@ from psycopg.errors import UndefinedTable
 from psycopg.rows import dict_row
 
 from classes.managed_resource import ManagedResource
-from classes.vector_index import SearchResult, Vector, VectorIndex
+from classes.vector_index import Vector, VectorIndex
 from utils.normalize import normalize_index_param
 
 _INSERT_COLUMNS = ("course", "section", "question", "answer")
@@ -197,7 +197,7 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         query_vector: Vector,
         filter_dict: dict[str, str] | None = None,
         num_results: int = 5,
-    ) -> list[SearchResult]:
+    ) -> list[dict[str, str]]:
         """Search the store by cosine similarity.
 
         Args:
@@ -233,16 +233,9 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         params_list.append(num_results)
         params = tuple(params_list)
 
-        rows = self._fetch_all(sql, params)
+        rows: list[dict[str, str]] = self._fetch_all(sql, params)
 
-        return [
-            SearchResult(
-                document={field: row[field] for field in _INSERT_COLUMNS},
-                distance=float(row["distance"]),
-                rank=rank,
-            )
-            for rank, row in enumerate(rows, start=1)
-        ]
+        return rows
 
     def size(self) -> int:
         """Return the number of stored documents.

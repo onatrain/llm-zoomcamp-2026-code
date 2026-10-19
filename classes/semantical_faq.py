@@ -32,11 +32,9 @@ class SemanticalFAQ(FAQ):
     ) -> list[dict[str, str]]:
         query_vector: Vector = self._embedder.encode_text(question)
 
-        results = self._index.search(
+        return self._index.search(
             query_vector, filter_dict=filter_dict, num_results=num_results
         )
-
-        return [result.document for result in results]
 
     def close(self) -> None:
         self._index.close()

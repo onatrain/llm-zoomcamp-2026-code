@@ -44,9 +44,8 @@ def test_search_returns_the_closest_documents_first(
 
     results = index.search(QUERY, num_results=2)
 
-    assert [result.rank for result in results] == [1, 2]
-    assert results[0].document["question"] == DOCUMENTS[0]["question"]
-    assert isinstance(results[0].distance, float)
+    assert len(results) == 2
+    assert results[0]["question"] == DOCUMENTS[0]["question"]
 
 
 def test_search_respects_the_course_filter(index: LocalVectorDbIndex) -> None:
@@ -55,7 +54,7 @@ def test_search_respects_the_course_filter(index: LocalVectorDbIndex) -> None:
     results = index.search(QUERY, filter_dict={"course": "mlops-zoomcamp"}, num_results=5)
 
     assert results
-    assert all(result.document["course"] == "mlops-zoomcamp" for result in results)
+    assert all(result["course"] == "mlops-zoomcamp" for result in results)
 
 
 def test_load_rejects_mismatched_documents_and_vectors(
@@ -95,5 +94,5 @@ def test_documents_persist_across_instances(tmp_path: Path) -> None:
 
     assert second.size() == len(DOCUMENTS)
     results = second.search(QUERY, num_results=2)
-    assert results[0].document["question"] == DOCUMENTS[0]["question"]
+    assert results[0]["question"] == DOCUMENTS[0]["question"]
     second.close()

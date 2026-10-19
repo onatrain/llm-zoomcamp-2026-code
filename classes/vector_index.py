@@ -1,26 +1,9 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any, Sequence
 
 from numpy.typing import NDArray
 
 Vector = NDArray[Any]
-
-
-@dataclass(frozen=True)
-class SearchResult:
-    """A single hit returned by a vector store search.
-
-    Attributes:
-        document: The stored document as a string mapping.
-        distance: The distance between the query vector and the document
-            vector, in the metric used by the store.
-        rank: The 1-based position of the result in the result list.
-    """
-
-    document: dict[str, str]
-    distance: float
-    rank: int
 
 
 class VectorIndex(ABC):
@@ -79,7 +62,7 @@ class VectorIndex(ABC):
         query_vector: Vector,
         filter_dict: dict[str, str] | None = None,
         num_results: int = 5,
-    ) -> list[SearchResult]:
+    ) -> list[dict[str, str]]:
         """Search the store by vector similarity.
 
         Args:

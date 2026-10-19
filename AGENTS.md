@@ -8,7 +8,7 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 - `classes/` — reusable library (FAQ searchers, embedders, RAG pipeline, Agent/Toolset stack, vector stores). Entrypoint for config composition: `classes/faq_searcher_factory.py`.
   - `faq.py` — `FAQ` contract (open/search/close/build_index/count); other indexes are `FAQ` adapters. `build_index()` always *rebuilds* the FAQ content fetched from `RawFaq`; for pgvector that means the adapter resets the store itself.
-  - `vector_index.py` — `VectorIndex` port + `SearchResult` for vector indexes.
+  - `vector_index.py` — `VectorIndex` port for vector indexes.
 - `keyword_index.py` — `KeywordIndex` port for lexical indexes.
   - `managed_resource.py` — `ManagedResource` mixin: open/close lifecycle, finalizers, context manager.
   - `pgvector_index.py` — `PgvectorIndex`, the psycopg/pgvector `VectorIndex` implementation.

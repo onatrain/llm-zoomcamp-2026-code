@@ -54,7 +54,7 @@ agentic tool-calling stack. It is consumed by the scripts in `module_1/` and
   `Embedder` to the `FAQ` contract (`open`/`search`/`close`/`build_index`/
   `count`). It is the only piece that knows the FAQ vocabulary: it encodes the
   question with the embedder, delegates the database work to the store, maps
-  `SearchResult` objects back to `list[dict[str, str]]`, and owns the rebuild
+  the store's `list[dict[str, str]]` back to the FAQ contract, and owns the rebuild
   semantics of `build_index()` (open, `reset()`, insert). Every
   technology-specific import (psycopg, numpy) lives below it, in the store.
 - This keeps one `FAQ` implementation per store family while allowing N vector
@@ -153,13 +153,6 @@ thread, not the pipeline, is the single source of conversation history.
 `LexicalFAQ` (via `LocalDbIndex`) and `SemanticalFAQ` (via `LocalVectorDbIndex`) persist indexes in a plain SQLite file via
 `sqlitesearch.TextSearchIndex`/`VectorSearchIndex` (vector index in `ivf`
 mode), making local RAG runs reproducible without a server.
-
-### Data Transfer Object for search hits
-
-- `SearchResult` (`classes/vector_index.py`) is a frozen dataclass carrying
-  `document`, `distance` and `rank`. It keeps the cosine distance available at
-  the store boundary without leaking pgvector row objects upward, and lets the
-  adapter decide what to expose.
 
 ### build_index rebuilds the FAQ content
 

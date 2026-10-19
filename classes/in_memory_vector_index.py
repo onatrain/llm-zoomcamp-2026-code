@@ -5,7 +5,7 @@ from typing import Sequence
 from minsearch import VectorSearch
 
 from classes.managed_resource import ManagedResource
-from classes.vector_index import SearchResult, Vector, VectorIndex
+from classes.vector_index import Vector, VectorIndex
 from utils.normalize import normalize_index_param
 
 
@@ -80,7 +80,7 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         query_vector: Vector,
         filter_dict: dict[str, str] | None = None,
         num_results: int = 5,
-    ) -> list[SearchResult]:
+    ) -> list[dict[str, str]]:
         """Search the store by vector similarity.
 
         Args:
@@ -101,13 +101,10 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
 
         normalized = normalize_index_param(filter_dict)
 
-        rows = index.search(
+        rows: list[dict[str, str]] = index.search(
             query_vector, filter_dict=normalized, num_results=num_results
         )
-        return [
-            SearchResult(document=row, distance=0.0, rank=rank)
-            for rank, row in enumerate(rows, start=1)
-        ]
+        return rows
 
     def size(self) -> int:
         """Return the number of stored documents.

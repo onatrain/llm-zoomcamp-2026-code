@@ -96,7 +96,6 @@ Scripts extending the RAG pipeline with vector search and embeddings. Features i
 - InMemoryIndex implements KeywordIndex (and ManagedResource) and uses minsearch.
 - LocalDbIndex implements KeywordIndex (and ManagedResource) and uses sqlitesearch.
 - SentenceEmbedder implements Embedder and uses sentence-transformers.
-- SearchResult is the value object returned by VectorIndex searches.
 - RawFaq supplies the FAQ items consumed by SemanticalFAQ and LexicalFAQ in build_index().
 - FAQSearcher wraps a FAQ instance.
 - RAGPipeline composes a FAQSearcher, a PromptBuilder, and an LLMPrompter.

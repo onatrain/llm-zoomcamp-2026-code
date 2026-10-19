@@ -5,7 +5,7 @@ from typing import Sequence
 from sqlitesearch import VectorSearchIndex
 
 from classes.managed_resource import ManagedResource
-from classes.vector_index import SearchResult, Vector, VectorIndex
+from classes.vector_index import Vector, VectorIndex
 from utils.normalize import normalize_index_param
 
 
@@ -79,29 +79,17 @@ class LocalVectorDbIndex(ManagedResource[VectorSearchIndex], VectorIndex):
         query_vector: Vector,
         filter_dict: dict[str, str] | None = None,
         num_results: int = 5,
-    ) -> list[SearchResult]:
+    ) -> list[dict[str, str]]:
         if self._index is None:
             raise RuntimeError(self.closed_message)
 
         index = self._index
         normalized = normalize_index_param(filter_dict)
-        rows = index.search(
+        rows: list[dict[str, str]] = index.search(
             query_vector, filter_dict=normalized, num_results=num_results
         )
 
-        results: list[SearchResult] = []
-        for rank, row in enumerate(rows, start=1):
-            if isinstance(row, dict):
-                distance = float(row.get("distance", 0.0))
-                document = row
-            else:
-                distance = 0.0
-                document = dict(row) if hasattr(row, "items") else {"value": str(row)}
-            results.append(
-                SearchResult(document=document, distance=distance, rank=rank)
-            )
-
-        return results
+        return rows
 
     def size(self) -> int:
         index = self._index
