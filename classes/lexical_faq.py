@@ -20,7 +20,7 @@ class LexicalFAQ(FAQ):
         question: str,
         filter_dict: dict[str, str] | None = None,
         boost_dict: dict[str, float] | None = None,
-        num_results: int = 10,
+        num_results: int = 5,
     ) -> list[dict[str, str]]:
         return self._index.search(
             question,

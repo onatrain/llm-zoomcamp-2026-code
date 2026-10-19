@@ -30,10 +30,10 @@ def test_non_positive_dimension_is_rejected(dimension: int) -> None:
         PgvectorIndex(DSN, dimension=dimension)
 
 
-def test_add_all_rejects_mismatched_documents_and_vectors() -> None:
+def test_load_rejects_mismatched_documents_and_vectors() -> None:
     index = PgvectorIndex(DSN, dimension=3)
     with pytest.raises(ValueError, match="vectors"):
-        index.add_all([DOCUMENT], [])
+        index.load([DOCUMENT], [])
 
 
 def test_size_requires_an_open_connection() -> None:

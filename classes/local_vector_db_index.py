@@ -6,6 +6,7 @@ from sqlitesearch import VectorSearchIndex
 
 from classes.managed_resource import ManagedResource
 from classes.vector_index import SearchResult, Vector, VectorIndex
+from utils.normalize import normalize_index_param
 
 
 class LocalVectorDbIndex(ManagedResource[VectorSearchIndex], VectorIndex):
@@ -42,17 +43,22 @@ class LocalVectorDbIndex(ManagedResource[VectorSearchIndex], VectorIndex):
             raise RuntimeError(self.closed_message)
         index.clear()
 
-    def add(self, document: dict[str, str], vector: Vector) -> None:
-        if self._index is None:
-            self.open()
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
-        index.add(vector, document)
-
-    def add_all(
+    def load(
         self, documents: Sequence[dict[str, str]], vectors: Sequence[Vector]
     ) -> None:
+        """Replace the store contents with the given documents and embeddings.
+
+        The previous content is discarded; the store is fully rebuilt from the
+        provided data.
+
+        Args:
+            documents: The documents to store.
+            vectors: The embeddings of the documents, aligned with ``documents``.
+
+        Raises:
+            ValueError: If ``documents`` and ``vectors`` have different lengths.
+            RuntimeError: If the index is closed and cannot be opened.
+        """
         if len(documents) != len(vectors):
             raise ValueError("documents and vectors must have the same length")
 
@@ -69,15 +75,18 @@ class LocalVectorDbIndex(ManagedResource[VectorSearchIndex], VectorIndex):
         index.fit(list(vectors), list(documents))
 
     def search(
-        self, query_vector: Vector, course: str | None = None, num_results: int = 5
+        self,
+        query_vector: Vector,
+        filter_dict: dict[str, str] | None = None,
+        num_results: int = 5,
     ) -> list[SearchResult]:
         if self._index is None:
             raise RuntimeError(self.closed_message)
 
         index = self._index
-        filter_dict = {"course": course} if course is not None else None
+        normalized = normalize_index_param(filter_dict)
         rows = index.search(
-            query_vector, filter_dict=filter_dict, num_results=num_results
+            query_vector, filter_dict=normalized, num_results=num_results
         )
 
         results: list[SearchResult] = []

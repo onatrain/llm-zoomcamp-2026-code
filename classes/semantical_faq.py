@@ -28,13 +28,12 @@ class SemanticalFAQ(FAQ):
         question: str,
         filter_dict: dict[str, str] | None = None,
         boost_dict: dict[str, float] | None = None,
-        num_results: int = 10,
+        num_results: int = 5,
     ) -> list[dict[str, str]]:
         query_vector: Vector = self._embedder.encode_text(question)
 
-        course = filter_dict["course"] if filter_dict else None
         results = self._index.search(
-            query_vector, course=course, num_results=num_results
+            query_vector, filter_dict=filter_dict, num_results=num_results
         )
 
         return [result.document for result in results]
@@ -79,7 +78,7 @@ class SemanticalFAQ(FAQ):
 
         self._index.reset()
 
-        self._index.add_all(faq_items, list(embeddings))
+        self._index.load(faq_items, list(embeddings))
 
     @property
     def count(self) -> int:

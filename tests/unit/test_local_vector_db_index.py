@@ -31,8 +31,8 @@ def index(tmp_path: Path) -> LocalVectorDbIndex:
     return LocalVectorDbIndex(str(tmp_path / "vector_faq.db"))
 
 
-def test_add_all_indexes_documents(index: LocalVectorDbIndex) -> None:
-    index.add_all(DOCUMENTS, VECTORS)
+def test_load_indexes_documents(index: LocalVectorDbIndex) -> None:
+    index.load(DOCUMENTS, VECTORS)
 
     assert index.size() == len(DOCUMENTS)
 
@@ -40,7 +40,7 @@ def test_add_all_indexes_documents(index: LocalVectorDbIndex) -> None:
 def test_search_returns_the_closest_documents_first(
     index: LocalVectorDbIndex,
 ) -> None:
-    index.add_all(DOCUMENTS, VECTORS)
+    index.load(DOCUMENTS, VECTORS)
 
     results = index.search(QUERY, num_results=2)
 
@@ -50,39 +50,29 @@ def test_search_returns_the_closest_documents_first(
 
 
 def test_search_respects_the_course_filter(index: LocalVectorDbIndex) -> None:
-    index.add_all(DOCUMENTS, VECTORS)
+    index.load(DOCUMENTS, VECTORS)
 
-    results = index.search(QUERY, course="mlops-zoomcamp", num_results=5)
+    results = index.search(QUERY, filter_dict={"course": "mlops-zoomcamp"}, num_results=5)
 
     assert results
     assert all(result.document["course"] == "mlops-zoomcamp" for result in results)
 
 
-def test_add_all_rejects_mismatched_documents_and_vectors(
+def test_load_rejects_mismatched_documents_and_vectors(
     index: LocalVectorDbIndex,
 ) -> None:
     with pytest.raises(ValueError, match="length"):
-        index.add_all(DOCUMENTS, VECTORS[:1])
+        index.load(DOCUMENTS, VECTORS[:1])
 
 
-def test_add_appends_a_single_document(index: LocalVectorDbIndex) -> None:
-    index.add_all(DOCUMENTS, VECTORS)
+def test_load_indexes_a_single_document(index: LocalVectorDbIndex) -> None:
+    index.load([DOCUMENTS[0]], [VECTORS[0]])
 
-    index.add(
-        {
-            "course": "llm-zoomcamp",
-            "section": "General",
-            "question": "Is the course free?",
-            "answer": "Yes, the course is free.",
-        },
-        np.array([1.0, 1.0, 0.0]),
-    )
-
-    assert index.size() == len(DOCUMENTS) + 1
+    assert index.size() == 1
 
 
 def test_reset_clears_the_index(index: LocalVectorDbIndex) -> None:
-    index.add_all(DOCUMENTS, VECTORS)
+    index.load(DOCUMENTS, VECTORS)
 
     index.reset()
 
@@ -97,7 +87,7 @@ def test_search_requires_an_open_index(index: LocalVectorDbIndex) -> None:
 def test_documents_persist_across_instances(tmp_path: Path) -> None:
     db_path = str(tmp_path / "vector_faq.db")
     first = LocalVectorDbIndex(db_path)
-    first.add_all(DOCUMENTS, VECTORS)
+    first.load(DOCUMENTS, VECTORS)
     first.close()
 
     second = LocalVectorDbIndex(db_path)

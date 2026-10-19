@@ -56,36 +56,36 @@ class VectorIndex(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def add(self, document: dict[str, str], vector: Vector) -> None:
-        """Insert a single document with its embedding.
-
-        Args:
-            document: The document fields to store.
-            vector: The embedding of the document.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def add_all(
+    def load(
         self, documents: Sequence[dict[str, str]], vectors: Sequence[Vector]
     ) -> None:
-        """Insert many documents with their embeddings.
+        """Replace the store contents with the given documents and embeddings.
+
+        The previous content is discarded; the store is fully rebuilt from the
+        provided data.
 
         Args:
             documents: The documents to store.
             vectors: The embeddings of the documents, aligned with ``documents``.
+
+        Raises:
+            ValueError: If ``documents`` and ``vectors`` have different lengths.
         """
         raise NotImplementedError
 
     @abstractmethod
     def search(
-        self, query_vector: Vector, course: str | None = None, num_results: int = 5
+        self,
+        query_vector: Vector,
+        filter_dict: dict[str, str] | None = None,
+        num_results: int = 5,
     ) -> list[SearchResult]:
         """Search the store by vector similarity.
 
         Args:
             query_vector: The embedding of the query.
-            course: Optional course slug to restrict the search to.
+            filter_dict: Optional mapping of field names to values used to
+                restrict the search to matching documents.
             num_results: Maximum number of results to return.
 
         Returns:

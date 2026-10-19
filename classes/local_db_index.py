@@ -6,6 +6,7 @@ from sqlitesearch import TextSearchIndex
 
 from classes.keyword_index import KeywordIndex
 from classes.managed_resource import ManagedResource
+from utils.normalize import normalize_index_param
 
 
 class LocalDbIndex(ManagedResource[TextSearchIndex], KeywordIndex):
@@ -76,7 +77,7 @@ class LocalDbIndex(ManagedResource[TextSearchIndex], KeywordIndex):
         question: str,
         filter_dict: dict[str, str] | None = None,
         boost_dict: dict[str, float] | None = None,
-        num_results: int = 10,
+        num_results: int = 5,
     ) -> list[dict[str, str]]:
         """Search the index.
 
@@ -93,10 +94,12 @@ class LocalDbIndex(ManagedResource[TextSearchIndex], KeywordIndex):
             RuntimeError: If the index is closed.
         """
         index = self._require_resource()
+        normalized_filter = normalize_index_param(filter_dict)
+        normalized_boost = normalize_index_param(boost_dict)
         results = index.search(
             question,
-            filter_dict=filter_dict,
-            boost_dict=boost_dict,
+            filter_dict=normalized_filter,
+            boost_dict=normalized_boost,
             num_results=num_results,
         )
         return list(results)

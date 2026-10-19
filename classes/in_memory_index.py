@@ -6,6 +6,7 @@ from minsearch import Index
 
 from classes.keyword_index import KeywordIndex
 from classes.managed_resource import ManagedResource
+from utils.normalize import normalize_index_param
 
 
 class InMemoryIndex(ManagedResource[Index], KeywordIndex):
@@ -70,7 +71,7 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         question: str,
         filter_dict: dict[str, str] | None = None,
         boost_dict: dict[str, float] | None = None,
-        num_results: int = 10,
+        num_results: int = 5,
     ) -> list[dict[str, str]]:
         """Search the index.
 
@@ -87,10 +88,13 @@ class InMemoryIndex(ManagedResource[Index], KeywordIndex):
         if index is None:
             raise RuntimeError(self.closed_message)
 
+        normalized_filter = normalize_index_param(filter_dict)
+        normalized_boost = normalize_index_param(boost_dict)
+
         results = index.search(
             question,
-            filter_dict=filter_dict,
-            boost_dict=boost_dict,
+            filter_dict=normalized_filter,
+            boost_dict=normalized_boost,
             num_results=num_results,
         )
         return list(results)

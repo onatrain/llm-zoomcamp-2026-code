@@ -9,6 +9,7 @@ from psycopg.rows import dict_row
 
 from classes.managed_resource import ManagedResource
 from classes.vector_index import SearchResult, Vector, VectorIndex
+from utils.normalize import normalize_index_param
 
 _INSERT_COLUMNS = ("course", "section", "question", "answer")
 _INSERT_SQL = """
@@ -118,24 +119,6 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
 
         conn.commit()
 
-    def add(self, document: dict[str, str], vector: Vector) -> None:
-        """Insert a single document with its embedding.
-
-        The insert is committed immediately.
-
-        Args:
-            document: The document fields to store.
-            vector: The embedding of the document.
-
-        Raises:
-            KeyError: If a document is missing one of the stored fields.
-            RuntimeError: If the documents table does not exist yet.
-        """
-        conn = self._require_resource()
-
-        self._execute_insert(document, vector)
-        conn.commit()
-
     def _execute_insert(self, document: dict[str, str], vector: Vector) -> None:
         """Execute the insert of one document without committing."""
         values = [document[field] for field in _INSERT_COLUMNS]
@@ -179,10 +162,13 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         rows: list[dict[str, Any]] = self._execute(sql, params).fetchall()
         return rows
 
-    def add_all(
+    def load(
         self, documents: Sequence[dict[str, str]], vectors: Sequence[Vector]
     ) -> None:
-        """Insert many documents with their embeddings in a single transaction.
+        """Replace the store contents with the given documents and embeddings.
+
+        The previous content must have been cleared (via ``reset()``) first;
+        this method inserts the provided documents in a single transaction.
 
         Args:
             documents: The documents to store.
@@ -207,13 +193,17 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         conn.commit()
 
     def search(
-        self, query_vector: Vector, course: str | None = None, num_results: int = 5
+        self,
+        query_vector: Vector,
+        filter_dict: dict[str, str] | None = None,
+        num_results: int = 5,
     ) -> list[SearchResult]:
         """Search the store by cosine similarity.
 
         Args:
             query_vector: The embedding of the query.
-            course: Optional course slug to restrict the search to.
+            filter_dict: Optional mapping of field names to values used to
+                restrict the search to matching documents.
             num_results: Maximum number of results to return.
 
         Returns:
@@ -221,15 +211,27 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
 
         Raises:
             RuntimeError: If the documents table does not exist yet.
+            ValueError: If ``filter_dict`` contains an unknown field.
         """
         literal = vector_literal(query_vector)
 
-        if course is None:
-            sql = _SEARCH_SQL.format(where="")
-            params: tuple[Any, ...] = (literal, num_results)
-        else:
-            sql = _SEARCH_SQL.format(where="WHERE course = %s")
-            params = (literal, course, num_results)
+        normalized = normalize_index_param(filter_dict)
+
+        where_clauses: list[str] = []
+        params_list: list[Any] = [literal]
+        if normalized:
+            for key, value in normalized.items():
+                if key not in _INSERT_COLUMNS:
+                    raise ValueError(f"Unknown filter field: {key}")
+                where_clauses.append(f"{key} = %s")
+                params_list.append(value)
+
+        where = (
+            "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        )
+        sql = _SEARCH_SQL.format(where=where)
+        params_list.append(num_results)
+        params = tuple(params_list)
 
         rows = self._fetch_all(sql, params)
 
