@@ -1,5 +1,6 @@
 """In-memory vector index backed by ``minsearch.VectorSearch``."""
 
+from functools import partial
 from typing import Sequence
 
 from minsearch import VectorSearch
@@ -9,12 +10,31 @@ from classes.vector_index import Vector, VectorIndex
 from utils.normalize import normalize_index_param
 
 
+def _clear_vector_index(index: VectorSearch) -> None:
+    """Release the heavy buffers held by a minsearch VectorSearch.
+
+    Args:
+        index: The index whose internal buffers must be cleared.
+    """
+    index.vectors = None
+    index.docs = []
+    index.keyword_df = None
+    index.numeric_df = None
+    index.date_df = None
+    index._filter = None
+
+
 class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
     """In-memory vector index using cosine similarity via minsearch.
 
     The index is volatile: its state is never persisted, so opening it always
     yields a fresh, empty instance. ``reset()`` is therefore a no-op that
     exists only to satisfy the ``VectorIndex`` contract.
+
+    The underlying ``minsearch.VectorSearch`` has no ``close()`` method, so a
+    closer that clears its heavy buffers is registered with
+    ``ManagedResource`` and runs both on explicit ``close()`` and on garbage
+    collection.
     """
 
     closed_message = "Index closed. You must open() it first."
@@ -22,12 +42,6 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
     def __init__(self) -> None:
         """Initialize a closed, empty in-memory vector index."""
         super().__init__()
-        self._index: VectorSearch | None = None
-
-    @property
-    def is_open(self) -> bool:
-        """Whether the index is currently open."""
-        return self._index is not None
 
     def open(self) -> None:
         """Create a fresh, empty in-memory vector index.
@@ -37,7 +51,8 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         if self.is_open:
             self.close()
 
-        self._index = VectorSearch(keyword_fields=["course"])
+        index = VectorSearch(keyword_fields=["course"])
+        self._register_resource(index, partial(_clear_vector_index, index))
 
     def reset(self) -> None:
         """No-op reset for the volatile in-memory vector index.
@@ -47,6 +62,9 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         nothing to clear. The method exists only to honour the
         ``VectorIndex`` contract invoked by ``SemanticalFAQ.build_index``.
         """
+        # Volatile index: ``open()`` already discards any previous content by
+        # creating a brand-new, empty ``VectorSearch``. There is nothing to
+        # clear here; the method only honours the VectorIndex contract.
         pass
 
     def load(
@@ -68,11 +86,9 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         if len(documents) != len(vectors):
             raise ValueError("documents and vectors must have the same length")
 
-        if self._index is None:
+        if not self.is_open:
             self.open()
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
+        index = self._require_resource()
         index.fit(list(vectors), list(documents))
 
     def search(
@@ -95,10 +111,7 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         Raises:
             RuntimeError: If the index is closed.
         """
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
-
+        index = self._require_resource()
         normalized = normalize_index_param(filter_dict)
 
         rows: list[dict[str, str]] = index.search(
@@ -115,12 +128,11 @@ class InMemoryVectorIndex(ManagedResource[VectorSearch], VectorIndex):
         Raises:
             RuntimeError: If the index is closed.
         """
-        index = self._index
-        if index is None:
-            raise RuntimeError(self.closed_message)
-        return len(index.docs)
+        return len(self._require_resource().docs)
 
     def close(self) -> None:
         """Close the index and release managed resources."""
-        self._index = None
+        resource = self._resource
+        if resource is not None:
+            _clear_vector_index(resource)
         self._release_resource()

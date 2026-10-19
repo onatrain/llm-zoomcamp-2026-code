@@ -128,7 +128,7 @@ class IndexCase:
 
 INDEX_CASES = [
     IndexCase("in_memory", _build_in_memory, _search_keyword, True),
-    IndexCase("in_memory_vector", _build_in_memory_vector, _search_vector, False),
+    IndexCase("in_memory_vector", _build_in_memory_vector, _search_vector, True),
     IndexCase("local_db", _build_local_db, _search_keyword, True),
     IndexCase("local_vector_db", _build_local_vector_db, _search_vector, True),
     IndexCase("pgvector", _build_pgvector, _search_vector, True),
