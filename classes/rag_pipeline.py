@@ -1,3 +1,5 @@
+from typing import Any
+
 from classes.faq_searcher import FAQSearcher
 from classes.llm_prompter import LLMPrompter
 from classes.prompt_builder import PromptBuilder
@@ -14,8 +16,24 @@ class RAGPipeline:
         self._prompt_builder = prompt_builder
         self._llm_prompter = llm_prompter
 
-    def answer(self, question: str) -> str:
-        retrieval = self._searcher.search(question)
+    def answer(
+        self,
+        question: str,
+        course: str = "llm-zoomcamp",
+        extra_params: dict[str, Any] | None = None,
+    ) -> str:
+        boost_dict = {
+            "question": 2.0,
+            "section": 1.0,
+            "answer": 0.5,
+        }
+        merged_extra: dict[str, Any] = {"boost_dict": boost_dict}
+        if extra_params:
+            merged_extra.update(extra_params)
+
+        retrieval = self._searcher.search(
+            question, course=course, extra_params=merged_extra
+        )
 
         thread = self._prompt_builder.build(
             question, retrieval

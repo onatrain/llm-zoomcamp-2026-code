@@ -1,5 +1,7 @@
 """Lexical FAQ adapter for any keyword index."""
 
+from typing import Any
+
 from classes.faq import FAQ
 from classes.keyword_index import KeywordIndex
 from classes.raw_faq import RawFaq
@@ -19,14 +21,19 @@ class LexicalFAQ(FAQ):
         self,
         question: str,
         filter_dict: dict[str, str] | None = None,
-        boost_dict: dict[str, float] | None = None,
         num_results: int = 5,
+        boost_dict: dict[str, float] | None = None,
+        extra_params: dict[str, Any] | None = None,
     ) -> list[dict[str, str]]:
+        merged_extra: dict[str, Any] = dict(extra_params or {})
+        if boost_dict is not None:
+            merged_extra["boost_dict"] = boost_dict
+
         return self._index.search(
             question,
             filter_dict=filter_dict,
-            boost_dict=boost_dict,
             num_results=num_results,
+            **merged_extra,
         )
 
     def close(self) -> None:

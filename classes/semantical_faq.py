@@ -1,5 +1,7 @@
 """Semantical FAQ adapter for any vector index plus an embedder."""
 
+from typing import Any
+
 from classes.embedder import Embedder
 from classes.faq import FAQ
 from classes.raw_faq import RawFaq
@@ -27,8 +29,8 @@ class SemanticalFAQ(FAQ):
         self,
         question: str,
         filter_dict: dict[str, str] | None = None,
-        boost_dict: dict[str, float] | None = None,
         num_results: int = 5,
+        extra_params: dict[str, Any] | None = None,
     ) -> list[dict[str, str]]:
         query_vector: Vector = self._embedder.encode_text(question)
 
