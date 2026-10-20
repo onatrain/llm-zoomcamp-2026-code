@@ -7,18 +7,46 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 ## Layout
 
 - `classes/` — reusable library (FAQ searchers, embedders, RAG pipeline, Agent/Toolset stack, vector stores). Entrypoint for config composition: `classes/faq_searcher_factory.py`.
-  - `faq.py` — `FAQ` contract (open/search/close/build_index/count); other indexes are `FAQ` adapters. `build_index()` always *rebuilds* the FAQ content fetched from `RawFaq`; for pgvector that means the adapter resets the store itself.
-  - `vector_index.py` — `VectorIndex` port for vector indexes.
-- `keyword_index.py` — `KeywordIndex` port for lexical indexes.
-  - `managed_resource.py` — `ManagedResource` mixin: open/close lifecycle, finalizers, context manager.
-  - `pgvector_index.py` — `PgvectorIndex`, the psycopg/pgvector `VectorIndex` implementation.
-  - `semantical_faq.py` — `SemanticalFAQ`, `FAQ` adapter over any `VectorIndex` + `Embedder`.
-- `lexical_faq.py` — `LexicalFAQ`, `FAQ` adapter over any `KeywordIndex`.
-- `in_memory_index.py`, `in_memory_vector_index.py`, `local_db_index.py`, `local_vector_db_index.py` — concrete index implementations.
+  - Ports and contracts:
+    - `faq.py` — `FAQ` contract (`open`/`search`/`close`/`build_index`/`count`).
+    - `vector_index.py` — `VectorIndex` port for vector indexes.
+    - `keyword_index.py` — `KeywordIndex` port for lexical indexes.
+    - `embedder.py` — `Embedder` port for text embedding.
+    - `managed_resource.py` — `ManagedResource` mixin: open/close lifecycle, finalizers, context manager.
+  - FAQ adapters:
+    - `semantical_faq.py` — `SemanticalFAQ`, `FAQ` adapter over any `VectorIndex` + `Embedder`.
+    - `lexical_faq.py` — `LexicalFAQ`, `FAQ` adapter over any `KeywordIndex`.
+  - Concrete indexes:
+    - `in_memory_index.py` — `InMemoryIndex` (`KeywordIndex` over minsearch).
+    - `in_memory_vector_index.py` — `InMemoryVectorIndex` (`VectorIndex` over minsearch).
+    - `local_db_index.py` — `LocalDbIndex` (`KeywordIndex` over sqlitesearch).
+    - `local_vector_db_index.py` — `LocalVectorDbIndex` (`VectorIndex` over sqlitesearch).
+    - `pgvector_index.py` — `PgvectorIndex` (`VectorIndex` over PostgreSQL/pgvector).
+  - Composition and orchestration:
+    - `faq_searcher.py` — `FAQSearcher` wraps a `FAQ`.
+    - `faq_searcher_factory.py` — `FAQSearcherFactory` and provider registry.
+    - `searcher_config.py` — `SearcherConfig` dataclass.
+    - `rag_pipeline.py` — `RAGPipeline` composes `FAQSearcher`, `PromptBuilder`, and `LLMPrompter`.
+  - Agent stack:
+    - `agent.py` — `Agent` agentic loop.
+    - `llm_prompter.py` — `LLMPrompter` and response models.
+    - `toolset.py` — `Toolset` definitions and callbacks.
+    - `thread.py` — `Thread` conversation state.
+    - `llm_instructions.py` — `LLMInstruction` protocol and implementations.
+    - `prompt_builder.py` — `PromptBuilder`.
+  - Data and embeddings:
+    - `raw_faq.py` — `RawFaq` FAQ corpus fetcher.
+    - `sentence_embedder.py` — `SentenceEmbedder` (offline sentence-transformers).
 - `module_1/` — keyword-search RAG scripts (minsearch, sqlitesearch, function calling, agentic loop).
 - `module_2/` — vector-search scripts (sentence-transformers, numpy dot-product search, pgvector).
-- `utils/` — shared helpers (`llm`, `build_prompt`), importable from the repo root.
+- `utils/` — shared helpers (`llm`, `build_prompt`, `normalize`), importable from the repo root.
 - `control/` — scratch/experimental files; NOT part of the runnable package (gitignored).
+
+## Documentation & Specs
+
+- Consult `README.md` for the project overview, setup, contents at a glance, and class relationships.
+- Consult `docs/architecture.md` for design patterns, design decisions, and component specifications.
+- Read these files before modifying `classes/` when a description or specification of a component is needed.
 
 ## Running scripts
 
@@ -30,10 +58,10 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 ## Environment
 
-- Secrets file `.env` exists at project root directory but it is not accesible; it contains `LLM_API_KEY`, `LLM_BASE_URL`, `DATABASE_URL` value definitions.
+- Secrets file `.env` exists at project root directory but it is not accessible; it contains `LLM_API_KEY`, `LLM_BASE_URL`, `DATABASE_URL` value definitions.
 - sentence-transformers must run offline: `classes/sentence_embedder.py` sets `TRANSFORMERS_OFFLINE=1` / `HF_HUB_OFFLINE=1` at import time (huggingface_hub reads those flags only once, when imported) and resolves the cached model directory instead of the model id. `local_model_path()` searches `SENTENCE_TRANSFORMERS_HOME` and the HF Hub cache (`HF_HUB_CACHE`/`HF_HOME`, default `~/.cache/huggingface/hub`). Loading a local directory skips Hub resolution entirely, so no weights download is ever attempted. Use `load_transformer()` instead of building `SentenceTransformer` in scripts; do not remove the offline env vars.
 - pgvector scripts need the docker service: `docker compose up -d db` (env from `.env.docker`, port 5432). Data persists in `pgvector_data/`.
-- `module_2/pgingestion.py` is the canonical pgvector ingestion: it only builds a `PgvectorFAQ` and calls `build_index()`, which opens the store, resets it and inserts the embedded FAQ (no manual `connect()`/`db_reset()`). It is safe to run repeatedly; a fresh database needs no prior setup.
+- `module_2/pgingestion.py` is the canonical pgvector ingestion: it builds `SemanticalFAQ(PgvectorIndex(dsn, dimension=embedder.embedding_dimension), embedder)` and calls `build_index()`, which opens the store, resets it and inserts the embedded FAQ (no manual `connect()`/`db_reset()`). It is safe to run repeatedly; a fresh database needs no prior setup.
 
 ## Checks
 
@@ -50,4 +78,4 @@ Course code for LLM Zoomcamp 2026: RAG pipelines and agents over FAQ data. Pytho
 
 ## Pending
 
-- Integrate PgVectorIndex to the RAG pipeline and test it.
+- None.

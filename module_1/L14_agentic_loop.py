@@ -27,7 +27,9 @@ def search(query: str) -> list[dict[str, str]]:
     boost_dict = {"question": 3.0, "section": 0.5}
     filter_dict = {"course": "llm-zoomcamp"}
 
-    return faq.search(query, filter_dict=filter_dict, boost_dict=boost_dict, num_results=5)
+    return faq.search(
+        query, filter_dict=filter_dict, boost_dict=boost_dict, num_results=5
+    )
 
 
 search_tool = {

@@ -22,5 +22,3 @@ for url in course_urls:
     print(len(course_faq_items))
 
 print("There are", len(faq_items), "items in the faq.")
-
-

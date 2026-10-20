@@ -10,10 +10,7 @@ def llm(prompt: str) -> str:
     Returns:
         The model's output text.
     """
-    response = client.responses.create(
-        model="nemotron-3-ultra:cloud",
-        input=prompt
-    )
+    response = client.responses.create(model="nemotron-3-ultra:cloud", input=prompt)
     return str(response.output_text)
 
 

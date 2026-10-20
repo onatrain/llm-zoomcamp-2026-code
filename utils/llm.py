@@ -7,9 +7,9 @@ from openai.types.responses import ResponseInputParam
 dotenv.load_dotenv()
 
 client = openai.Client(
-    base_url=os.getenv("LLM_BASE_URL"),
-    api_key=os.getenv("LLM_API_KEY")
+    base_url=os.getenv("LLM_BASE_URL"), api_key=os.getenv("LLM_API_KEY")
 )
+
 
 def llm(user_prompt: str, system_prompt: str | None = None) -> str:
     """Send a prompt to the LLM and return its text response.

@@ -14,9 +14,7 @@ results = vindex.search(query_vector, num_results=5)
 pprint(results)
 
 results = vindex.search(
-    query_vector,
-    filter_dict={"course": "llm-zoomcamp"},
-    num_results=5
+    query_vector, filter_dict={"course": "llm-zoomcamp"}, num_results=5
 )
 
 print("\n", "*" * 100, "\n")

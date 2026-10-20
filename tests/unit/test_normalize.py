@@ -1,6 +1,5 @@
 """Unit tests for the optional search parameter normalizer."""
 
-
 from utils.normalize import normalize_index_param
 
 

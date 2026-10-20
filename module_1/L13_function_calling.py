@@ -40,7 +40,9 @@ def search(query: str) -> list[dict[str, str]]:
     boost_dict = {"question": 3.0, "section": 0.5}
     filter_dict = {"course": "llm-zoomcamp"}
 
-    return faq.search(query, filter_dict=filter_dict, boost_dict=boost_dict, num_results=5)
+    return faq.search(
+        query, filter_dict=filter_dict, boost_dict=boost_dict, num_results=5
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -75,7 +77,9 @@ model = "nemotron-3-ultra:cloud"
 # List of messages for the model
 # ═══════════════════════════════════════════════════════════════════
 messages: list[ResponseInputItemParam] = [
-    EasyInputMessageParam(role="user", content="I just discovered the course. Can I join it?")
+    EasyInputMessageParam(
+        role="user", content="I just discovered the course. Can I join it?"
+    )
 ]
 
 response = client.responses.create(

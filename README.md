@@ -56,6 +56,8 @@ A small library of reusable components for building RAG pipelines and agents ove
 - Ports/Indexes: `VectorIndex` and `KeywordIndex`; adapters: `SemanticalFAQ` and `LexicalFAQ`
 - Keyword search (minsearch & sqlitesearch) and vector search (sentence-transformers embeddings)
 - `FAQSearcherFactory` (provider registry based) and `SearcherConfig` to compose searchers from a single config
+- `ManagedResource` mixin for the open/close lifecycle, finalizers, and context managers of external resources
+- Search parameters passed through `extra_params` (OpenAI-style), including lexical-only `boost_dict`
 - Prompt building (`PromptBuilder`, `Thread`, `LLMInstruction`) and RAG orchestration (`RAGPipeline`)
 - An `Agent` / `LLMPrompter` / `Toolset` stack for tool-calling agentic loops
 - Data ingestion helpers (`RawFaq`, `SentenceEmbedder`, `PgvectorIndex`)
@@ -84,13 +86,13 @@ Scripts extending the RAG pipeline with vector search and embeddings. Features i
 - Building local and in-memory vector FAQ indexes
 - RAG pipelines using sentence-embedding vector search, backed by local SQLite and pgvector
 
-### Classes relationship
+## Class relationship
 
 - FAQ, VectorIndex, KeywordIndex, and Embedder are abstract classes.
-- ManagedResource is the generic mixin base of every concrete index (InMemoryIndex, InMemoryVectorIndex, LocalDbIndex, LocalVectorDbIndex, PgVectorIndex).
+- ManagedResource is the generic mixin base of every concrete index (InMemoryIndex, InMemoryVectorIndex, LocalDbIndex, LocalVectorDbIndex, PgvectorIndex).
 - SemanticalFAQ implements FAQ and adapts any VectorIndex using an Embedder.
 - LexicalFAQ implements FAQ and adapts any KeywordIndex.
-- PgVectorIndex implements VectorIndex (and ManagedResource) and uses PostgreSQL/pgvector.
+- PgvectorIndex implements VectorIndex (and ManagedResource) and uses PostgreSQL/pgvector.
 - LocalVectorDbIndex implements VectorIndex (and ManagedResource) and uses sqlitesearch.
 - InMemoryVectorIndex implements VectorIndex (and ManagedResource) and uses minsearch.
 - InMemoryIndex implements KeywordIndex (and ManagedResource) and uses minsearch.
@@ -98,6 +100,8 @@ Scripts extending the RAG pipeline with vector search and embeddings. Features i
 - SentenceEmbedder implements Embedder and uses sentence-transformers.
 - RawFaq supplies the FAQ items consumed by SemanticalFAQ and LexicalFAQ in build_index().
 - FAQSearcher wraps a FAQ instance.
+- FAQSearcherFactory creates a FAQSearcher from a SearcherConfig.
+- SearcherConfig selects the index type and vector engine.
 - RAGPipeline composes a FAQSearcher, a PromptBuilder, and an LLMPrompter.
 
 ## License

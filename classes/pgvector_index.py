@@ -240,9 +240,7 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
                 where_clauses.append(f"{key} = %s")
                 params_list.append(value)
 
-        where = (
-            "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-        )
+        where = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         sql = _SEARCH_SQL.format(where=where)
         params_list.append(num_results)
         params = tuple(params_list)

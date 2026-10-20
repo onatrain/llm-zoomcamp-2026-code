@@ -20,7 +20,7 @@ def search(question: str) -> str:
             "(while the form is open) without registering. It is not checked against any registered list. "
             "Registration is just to gauge interest before the start date."
         ),
-        "What is the video/zoom link to the stream for the \"Office Hours\" or live/workshop sessions?": (
+        'What is the video/zoom link to the stream for the "Office Hours" or live/workshop sessions?': (
             "The zoom link is only published to instructors/presenters/TAs. Students participate via YouTube "
             "Live and submit questions to Slido."
         ),

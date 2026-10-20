@@ -51,7 +51,9 @@ def test_search_returns_the_closest_documents_first(
 def test_search_respects_the_course_filter(index: LocalVectorDbIndex) -> None:
     index.load(DOCUMENTS, VECTORS)
 
-    results = index.search(QUERY, filter_dict={"course": "mlops-zoomcamp"}, num_results=5)
+    results = index.search(
+        QUERY, filter_dict={"course": "mlops-zoomcamp"}, num_results=5
+    )
 
     assert results
     assert all(result["course"] == "mlops-zoomcamp" for result in results)
