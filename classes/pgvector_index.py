@@ -119,17 +119,31 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
 
         conn.commit()
 
-    def _execute_insert(self, document: dict[str, str], vector: Vector) -> None:
+    def _execute_insert(
+        self,
+        document: dict[str, str],
+        vector: Vector,
+        connection: Connection[dict[str, Any]] | None = None,
+    ) -> None:
         """Execute the insert of one document without committing."""
         values = [document[field] for field in _INSERT_COLUMNS]
-        self._execute(_INSERT_SQL, (*values, vector_literal(vector)))
+        self._execute(
+            _INSERT_SQL, (*values, vector_literal(vector)), connection=connection
+        )
 
-    def _execute(self, sql: str, params: tuple[Any, ...] = ()) -> Any:
+    def _execute(
+        self,
+        sql: str,
+        params: tuple[Any, ...] = (),
+        connection: Connection[dict[str, Any]] | None = None,
+    ) -> Any:
         """Run a statement against the open connection.
 
         Args:
             sql: The statement to run.
             params: The parameters of the statement.
+            connection: Optional already-open connection to reuse instead of
+                looking one up. When omitted, the managed connection is required.
 
         Returns:
             The cursor of the executed statement.
@@ -138,7 +152,7 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
             RuntimeError: If the store is closed or the documents table does not
                 exist yet, which means the index was never built.
         """
-        conn = self._require_resource()
+        conn = connection if connection is not None else self._require_resource()
 
         try:
             return conn.execute(sql, params)
@@ -188,7 +202,7 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
         conn = self._require_resource()
 
         for document, vector in zip(documents, vectors, strict=True):
-            self._execute_insert(document, vector)
+            self._execute_insert(document, vector, connection=conn)
 
         conn.commit()
 
@@ -258,9 +272,7 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
 
         Closing an already closed store is a no-op.
         """
-        if self._resource is None:
-            return
-
-        conn = self._require_resource()
-        conn.close()
+        resource = self._resource
+        if resource is not None:
+            resource.close()
         self._release_resource()
