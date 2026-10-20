@@ -13,6 +13,9 @@ from utils.normalize import normalize_index_param
 def _clear_vector_index(index: VectorSearch) -> None:
     """Release the heavy buffers held by a minsearch VectorSearch.
 
+    This smell is caused by the lack of explicit memory cleaning in
+    minsearch.VectorSearch
+
     Args:
         index: The index whose internal buffers must be cleared.
     """

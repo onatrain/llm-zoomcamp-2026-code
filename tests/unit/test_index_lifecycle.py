@@ -278,12 +278,12 @@ def test_reopening_local_vector_db_closes_the_previous_index(
     index = LocalVectorDbIndex(str(tmp_path / "vector_faq.db"))
 
     index.open()
-    first = index._index
+    first = index._resource
     index.open()
 
     assert isinstance(first, _RecordingVectorSearchIndex)
     assert first.close_calls == 1
-    assert index._index is not first
+    assert index._resource is not first
 
     index.close()
 
