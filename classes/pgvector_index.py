@@ -98,7 +98,9 @@ class PgvectorIndex(ManagedResource[Connection[dict[str, Any]]], VectorIndex):
 
         conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
+        conn.execute("DROP INDEX IF EXISTS hnsw_documents_ndx")
         conn.execute("DROP TABLE IF EXISTS documents")
+
         conn.execute(
             psycopg.sql.SQL("""
                 CREATE TABLE documents (
